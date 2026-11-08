@@ -47,6 +47,8 @@ import com.childoo.core.ParentPin
 import com.childoo.core.SettingsRepository
 import com.childoo.designsystem.ChildooColors
 import com.childoo.designsystem.IconBadge
+import com.childoo.designsystem.Nuzo
+import com.childoo.designsystem.NuzoMood
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -185,7 +187,7 @@ fun PinSetup(onPinChosen: (String) -> Unit, modifier: Modifier = Modifier) {
  * "Forgot PIN" asks a grown-up multiplication question, then lets the parent pick a new PIN.
  */
 @Composable
-fun ParentGate(repo: SettingsRepository, onUnlocked: () -> Unit) {
+fun ParentGate(repo: SettingsRepository, onUnlocked: () -> Unit, onKidCorner: () -> Unit) {
     val scope = rememberCoroutineScope()
     var failures by rememberSaveable { mutableIntStateOf(0) }
     var lockedUntil by rememberSaveable { mutableLongStateOf(0L) }
@@ -212,6 +214,9 @@ fun ParentGate(repo: SettingsRepository, onUnlocked: () -> Unit) {
             .padding(24.dp),
         contentAlignment = Alignment.Center,
     ) {
+        if (mode == GateMode.Enter) {
+            KidCornerButton(onClick = onKidCorner, modifier = Modifier.align(Alignment.TopCenter))
+        }
         when (mode) {
             GateMode.Enter -> PinPad(
                 title = stringResource(R.string.pin_gate_title),
@@ -329,5 +334,22 @@ private fun GrownUpCheck(onPassed: () -> Unit, onCancel: () -> Unit) {
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         )
         Spacer(Modifier.width(1.dp))
+    }
+}
+
+/** Big, friendly door for the child, so the PIN screen is never a dead end for them. */
+@Composable
+fun KidCornerButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .clip(CircleShape)
+            .background(ChildooColors.NuzoBlue.copy(alpha = 0.25f))
+            .clickable(onClick = onClick)
+            .padding(start = 8.dp, end = 18.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Nuzo(Modifier.width(36.dp), mood = NuzoMood.Happy)
+        Spacer(Modifier.width(8.dp))
+        Text(stringResource(R.string.kid_corner_open), style = MaterialTheme.typography.labelLarge, color = ChildooColors.Navy)
     }
 }

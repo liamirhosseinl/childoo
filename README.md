@@ -38,6 +38,9 @@ The parent picks the apps that cost screen time — YouTube, TikTok, Roblox, any
 
 - **14 learning games in three worlds.** Number Planet (counting, number bonds, balance, number line, fair sharing, patterns), Word Lagoon (first sounds, spelling, rhyme, categories, sight words) and Courage Mountain (calm breathing, movement, memory). Every game explains *why* after a correct answer.
 - **Adaptive and fair.** Levels follow each child's results per game; random tapping is detected and answered with one more round, never with punishment. Prompts are read aloud for pre-readers.
+- **Buddy, coins and rewards.** The child picks a buddy (Nuzo, Lotli or Embrix) on the first challenge. Every finished game pays coins, with a bonus for first-try answers and daily streaks; coins level the buddy up.
+- **Kid's Corner.** The child's own space, open without the PIN: see the buddy, spend coins on hats, glasses and backpacks, and dress up. Purchases never cost real money.
+- **Gentle sound.** Read-aloud prompts, soft effects and quiet generated music per world; each can be switched off by the parent.
 - **App-aware play timer.** Counts only the time spent in the apps the parent chose, and only while the screen is on.
 - **Challenge overlay.** A full-screen challenge appears over the target app as soon as the interval is used up. The Back button cannot dismiss it.
 - **Fair by design.** If the child leaves the app, the challenge steps aside. It returns, unsolved, the moment they come back. Picture-in-picture and split screen count as on screen.
@@ -51,7 +54,7 @@ The parent picks the apps that cost screen time — YouTube, TikTok, Roblox, any
 
 **On the roadmap**
 
-- Companion characters — **Nuzo**, **Lotli** and **Embrix** — that the child picks, grows and customises
+- Fully animated characters (the engine already swaps in animated clips from `games/public/characters/` when they exist; see `games/scripts/make-clip.sh`)
 - Parent PIN gate, tamper alerts and weekly progress reports
 - Subscription plans and a parent web dashboard
 - iOS app (Screen Time API)

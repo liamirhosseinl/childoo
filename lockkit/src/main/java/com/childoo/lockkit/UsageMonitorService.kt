@@ -17,6 +17,8 @@ import androidx.core.app.ServiceCompat
 import com.childoo.core.ChildProfile
 import com.childoo.core.GameProgress
 import com.childoo.core.LockSettings
+import com.childoo.core.Rewards
+import com.childoo.core.SoundPrefs
 import com.childoo.core.PlayTimeAccumulator
 import com.childoo.core.SettingsRepository
 import com.childoo.gamehost.GameConfig
@@ -30,6 +32,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /**
  * Foreground service that measures time spent in the parent's target apps and puts the
@@ -47,6 +50,8 @@ class UsageMonitorService : Service() {
     private var settings = LockSettings()
     private var child = ChildProfile()
     private var progress = GameProgress()
+    private var rewards = Rewards()
+    private var soundPrefs = SoundPrefs()
     private var accumulator = PlayTimeAccumulator()
     private var loop: Job? = null
 
@@ -88,9 +93,13 @@ class UsageMonitorService : Service() {
         scope.launch { repo.settings.collect { settings = it } }
         scope.launch { repo.child.collect { child = it } }
         scope.launch { repo.gameProgress.collect { progress = it } }
+        scope.launch { repo.rewards.collect { rewards = it } }
+        scope.launch { repo.soundPrefs.collect { soundPrefs = it } }
         settings = repo.settings.first()
         child = repo.child.first()
         progress = repo.gameProgress.first()
+        rewards = repo.rewards.first()
+        soundPrefs = repo.soundPrefs.first()
 
         var lastTick = SystemClock.elapsedRealtime()
         var lastSave = lastTick
@@ -130,11 +139,18 @@ class UsageMonitorService : Service() {
     }
 
     private fun showChallenge() {
+        val today = LocalDate.now().toEpochDay()
         val config = GameConfig(
             age = child.age,
             childName = child.name,
+            companion = rewards.companion,
             levels = progress.levels,
             recent = progress.recent,
+            wallet = rewards.wallet,
+            streakDays = rewards.streak.ifPlayedOn(today),
+            voice = soundPrefs.voice,
+            sound = soundPrefs.effects,
+            music = soundPrefs.music,
         )
         overlay.show(config, onDone = ::onChallengeSolved)
     }
@@ -147,7 +163,11 @@ class UsageMonitorService : Service() {
         challengeDue = false
         accumulator.reset()
         scope.launch {
-            if (result != null) repo.recordGame(result.gameId, result.newLevel) else repo.recordChallengeSolved()
+            if (result != null) {
+                repo.recordGame(result.gameId, result.newLevel, result.wallet, result.companion)
+            } else {
+                repo.recordChallengeSolved()
+            }
         }
     }
 

@@ -77,6 +77,11 @@ class GameView(
         webView.loadUrl(START_URL)
     }
 
+    /** Asks the page to finish politely (the Kid's Corner saves and closes), e.g. on Back. */
+    fun requestFinish() {
+        webView.evaluateJavascript("document.querySelector('.done-btn')?.click()", null)
+    }
+
     /** Must be called when the view is removed, or the WebView and speech engine leak. */
     fun release() {
         speech.shutdown()

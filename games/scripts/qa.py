@@ -31,6 +31,12 @@ async () => {
   while (Date.now() - start < 120000) {
     if (window.__childooResult) return window.__childooResult;
     const q = (s) => Array.from(document.querySelectorAll(s));
+    const picker = document.querySelector('.picker:not(.leaving)');
+    if (picker) {
+      q('.buddy-card')[1].click(); await sleep(300);
+      document.querySelector('.picker-go').click(); await sleep(600);
+      continue;
+    }
     const tiles = q('.tray .tile:not(:disabled)');
     if (tiles.length && !q('.tray .tile.right').length) { tiles[0].click(); await sleep(450); continue; }
     const letters = q('.letter-tile:not(:disabled)');
@@ -91,7 +97,8 @@ def main() -> int:
                 errors = []
                 page.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
                 page.on('pageerror', lambda e: errors.append(str(e)))
-                page.goto(f'http://127.0.0.1:{port}/index.html?game={game}&level={level}&seed=7&voice=0&sound=0')
+                buddy = '' if game == 'star-counter' and level == 1 else '&buddy=embrix'
+                page.goto(f'http://127.0.0.1:{port}/index.html?game={game}&level={level}&seed=7&voice=0&sound=0&coins=70&xp=70&streak=3{buddy}')
                 page.wait_for_timeout(600)
                 page.screenshot(path=str(out / f'{game}-L{level}-1-intro.png'))
                 page.wait_for_timeout(3600)
@@ -106,6 +113,35 @@ def main() -> int:
                     failures.append(f'{game} L{level}: console errors: {errors[:3]}')
                 results[f'{game}-L{level}'] = {'result': result, 'seconds': round(time.time() - t0, 1)}
                 page.close()
+        if not only or 'room' in only:
+            page = browser.new_page(viewport={'width': 393, 'height': 852}, device_scale_factor=2)
+            errors = []
+            page.on('pageerror', lambda e: errors.append(str(e)))
+            page.goto(f'http://127.0.0.1:{port}/index.html?mode=room&voice=0&sound=0&coins=120&xp=230&owned=cap&buddy=nuzo&streak=4')
+            page.wait_for_timeout(900)
+            page.screenshot(path=str(out / 'room-1-buddies.png'))
+            page.click('.room-tabs .tab:nth-child(2)')
+            page.wait_for_timeout(300)
+            page.click('.shelf-card:nth-child(4)')  # crown: too expensive
+            page.wait_for_timeout(300)
+            page.screenshot(path=str(out / 'room-2-hats-locked.png'))
+            page.click('.shelf-card:nth-child(2)')  # top hat
+            page.wait_for_timeout(400)
+            page.screenshot(path=str(out / 'room-3-sheet.png'))
+            page.click('.sheet-yes')
+            page.wait_for_timeout(700)
+            page.click('.room-tabs .tab:nth-child(3)')
+            page.wait_for_timeout(200)
+            page.screenshot(path=str(out / 'room-4-bought.png'))
+            page.click('.done-btn')
+            page.wait_for_timeout(300)
+            room = page.evaluate('window.__childooResult')
+            results['room'] = room
+            if not room or room['wallet']['coins'] != 75 or 'top-hat' not in room['wallet']['owned']:
+                failures.append(f'room: unexpected result {room}')
+            if errors:
+                failures.append(f'room: errors {errors[:3]}')
+            page.close()
         browser.close()
     print(json.dumps(results, indent=1))
     if failures:

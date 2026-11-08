@@ -39,6 +39,7 @@ fun ChildooApp() {
         repo.hasPin.collect { value = it }
     }
     var unlocked by rememberSaveable { mutableStateOf(false) }
+    var kidCorner by rememberSaveable { mutableStateOf(false) }
     var stoppedAt by remember { mutableLongStateOf(0L) }
 
     // The parent who just finished setup is already "in"; don't ask for the PIN they just made.
@@ -66,9 +67,12 @@ fun ChildooApp() {
             when (screen) {
                 Root.Loading -> Unit
                 Root.Onboarding -> OnboardingFlow(repo)
-                Root.Gate -> ParentGate(repo, onUnlocked = { unlocked = true })
-                Root.Home -> HomeScreen(repo)
+                Root.Gate -> ParentGate(repo, onUnlocked = { unlocked = true }, onKidCorner = { kidCorner = true })
+                Root.Home -> HomeScreen(repo, onKidCorner = { kidCorner = true })
             }
+        }
+        if (kidCorner) {
+            KidCorner(repo, onClose = { kidCorner = false })
         }
     }
 }

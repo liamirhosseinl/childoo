@@ -127,4 +127,15 @@
     <string name="grownup_title">Quick grown-up check</string>
     <string name="grownup_body">Answer this to set a new PIN.</string>
     <string name="grownup_wrong">Not quite. Try again.</string>
+
+    <!-- Kid's Corner and rewards -->
+    <string name="kid_corner_open">Kid\'s Corner</string>
+    <string name="buddy_none">No buddy picked yet</string>
+    <string name="buddy_level">%1$s · Level %2$d</string>
+    <string name="buddy_coins">%1$d coins</string>
+    <string name="buddy_streak">%1$d-day streak</string>
+    <string name="home_sound_title">Sound</string>
+    <string name="sound_voice">Read questions aloud</string>
+    <string name="sound_effects">Sound effects</string>
+    <string name="sound_music">Music</string>
 </resources>

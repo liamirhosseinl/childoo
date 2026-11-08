@@ -51,6 +51,13 @@ function browserHost(): Host {
     seed: num('seed'),
     voice: params.get('voice') !== '0',
     sound: params.get('sound') !== '0',
+    music: params.get('music') !== '0',
+    mode: params.get('mode') === 'room' ? 'room' : 'challenge',
+    companion: (['nuzo', 'lotli', 'embrix'] as const).find((w) => w === params.get('buddy')),
+    streakDays: num('streak'),
+    wallet: params.has('coins')
+      ? { coins: num('coins') ?? 0, xp: num('xp') ?? num('coins') ?? 0, owned: (params.get('owned') ?? '').split(',').filter(Boolean), equipped: {} }
+      : undefined,
   };
   const synth = typeof speechSynthesis !== 'undefined' ? speechSynthesis : undefined;
   return {

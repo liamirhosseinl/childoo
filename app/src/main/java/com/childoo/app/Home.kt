@@ -64,6 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.childoo.core.ChildProfile
 import com.childoo.core.LockSettings
+import com.childoo.core.Rewards
+import com.childoo.core.SoundPrefs
 import com.childoo.core.SettingsRepository
 import com.childoo.designsystem.ChildooColors
 import com.childoo.designsystem.GhostButton
@@ -75,7 +77,7 @@ import kotlinx.coroutines.launch
 
 /** The parent's dashboard after setup. */
 @Composable
-fun HomeScreen(repo: SettingsRepository) {
+fun HomeScreen(repo: SettingsRepository, onKidCorner: () -> Unit) {
     var editingApps by rememberSaveable { mutableStateOf(false) }
     BackHandler(enabled = editingApps) { editingApps = false }
 
@@ -87,13 +89,13 @@ fun HomeScreen(repo: SettingsRepository) {
         if (editing) {
             EditAppsScreen(repo, onDone = { editingApps = false })
         } else {
-            Dashboard(repo, onEditApps = { editingApps = true })
+            Dashboard(repo, onEditApps = { editingApps = true }, onKidCorner = onKidCorner)
         }
     }
 }
 
 @Composable
-private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit) {
+private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit, onKidCorner: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val settings by repo.settings.collectAsStateWithLifecycle(initialValue = LockSettings())
@@ -101,6 +103,8 @@ private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit) {
     val playedMs by repo.playedSinceChallengeMs.collectAsStateWithLifecycle(initialValue = 0L)
     val perms by rememberPermissionState()
     val child by repo.child.collectAsStateWithLifecycle(initialValue = ChildProfile())
+    val rewards by repo.rewards.collectAsStateWithLifecycle(initialValue = Rewards())
+    val sound by repo.soundPrefs.collectAsStateWithLifecycle(initialValue = SoundPrefs())
     val apps by rememberInstalledApps()
     val selectedApps = remember(apps, settings.targetPackages) {
         apps.orEmpty().filter { it.packageName in settings.targetPackages }
@@ -170,6 +174,8 @@ private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit) {
             )
         }
 
+        BuddyCard(rewards = rewards, onOpen = onKidCorner)
+
         // Protected apps
         SectionCard(
             title = stringResource(R.string.home_apps_title),
@@ -193,6 +199,12 @@ private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit) {
                 selected = settings.intervalMinutes,
                 onSelect = { m -> scope.launch { repo.setIntervalMinutes(m) } },
             )
+        }
+
+        SectionCard(title = stringResource(R.string.home_sound_title)) {
+            SoundRow(stringResource(R.string.sound_voice), sound.voice) { on -> scope.launch { repo.setSoundPrefs(sound.copy(voice = on)) } }
+            SoundRow(stringResource(R.string.sound_effects), sound.effects) { on -> scope.launch { repo.setSoundPrefs(sound.copy(effects = on)) } }
+            SoundRow(stringResource(R.string.sound_music), sound.music) { on -> scope.launch { repo.setSoundPrefs(sound.copy(music = on)) } }
         }
 
         GhostButton(
@@ -482,4 +494,100 @@ private fun EditAppsScreen(repo: SettingsRepository, onDone: () -> Unit) {
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
         )
     }
+}
+
+@Composable
+private fun SoundRow(label: String, on: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = ChildooColors.Ink, modifier = Modifier.weight(1f))
+        Switch(
+            checked = on,
+            onCheckedChange = onChange,
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = ChildooColors.Mint,
+                checkedThumbColor = Color.White,
+                checkedBorderColor = ChildooColors.Mint,
+            ),
+        )
+    }
+}
+
+/** The child's side of things at a glance: buddy, level, coins, streak, and the door to the Kid's Corner. */
+@Composable
+private fun BuddyCard(rewards: Rewards, onOpen: () -> Unit) {
+    val today = remember { java.time.LocalDate.now().toEpochDay() }
+    val wallet = rewards.wallet
+    val level = wallet.level
+    val from = com.childoo.core.Wallet.xpForLevel(level)
+    val to = com.childoo.core.Wallet.xpForLevel(level + 1)
+    val progress = ((wallet.xp - from).toFloat() / (to - from).coerceAtLeast(1)).coerceIn(0f, 1f)
+    val streak = rewards.streak.current(today)
+    val name = when (rewards.companion) {
+        "lotli" -> "Lotli"
+        "embrix" -> "Embrix"
+        "nuzo" -> "Nuzo"
+        else -> null
+    }
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(Brush.linearGradient(listOf(Color(0xFF4B3699), Color(0xFF7B5CD6))))
+            .clickable(onClick = onOpen)
+            .padding(18.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Nuzo(Modifier.width(52.dp), mood = NuzoMood.Happy)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    if (name == null) stringResource(R.string.buddy_none) else stringResource(R.string.buddy_level, name, level),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                )
+                Spacer(Modifier.height(6.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.2f)),
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth(progress)
+                            .height(8.dp)
+                            .clip(CircleShape)
+                            .background(ChildooColors.Gold),
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Chip(stringResource(R.string.buddy_coins, wallet.coins))
+            if (streak >= 1) Chip(stringResource(R.string.buddy_streak, streak))
+            Spacer(Modifier.weight(1f))
+            Text(stringResource(R.string.kid_corner_open), style = MaterialTheme.typography.labelLarge, color = ChildooColors.Gold)
+        }
+    }
+}
+
+@Composable
+private fun Chip(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color = Color.White,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.2f))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+    )
 }

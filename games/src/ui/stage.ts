@@ -1,4 +1,5 @@
 import { CHARACTER_NAMES, createMascot, setMood } from '../characters/mascots';
+import type { Slot } from '../engine/economy';
 import type { Choice, ChooseOptions, Mood, World } from '../engine/types';
 
 /**
@@ -139,15 +140,88 @@ export class Stage {
     });
   }
 
-  celebrate(title: string, sub: string, world: World): void {
+  /** The end-of-game moment: buddy cheers, coins count up, streak and level-up get their own beat. */
+  celebrate(c: Celebration): HTMLElement {
     const layer = document.createElement('div');
     layer.className = 'celebrate';
-    layer.innerHTML = `<div class="celebrate-card"><div class="celebrate-mascot"></div><h1>${escapeHtml(title)}</h1><p>${escapeHtml(sub)}</p></div>`;
-    const m = createMascot(world);
+    const streak = c.streakDays >= 2
+      ? `<div class="reward-chip streak">🔥 ${c.streakDays}-day streak <b>+${c.streakBonus}</b></div>`
+      : '';
+    const level = c.levelUp
+      ? `<div class="level-up">⭐ ${escapeHtml(CHARACTER_NAMES[c.world])} reached level ${c.level}!</div>`
+      : '';
+    layer.innerHTML = `
+      <div class="celebrate-card">
+        <div class="celebrate-mascot"></div>
+        <h1>${escapeHtml(c.title)}</h1>
+        <p>${escapeHtml(c.sub)}</p>
+        <div class="rewards">
+          <div class="coin-total"><span class="coin" aria-hidden="true"></span><span class="coin-num">+0</span></div>
+          ${streak}
+        </div>
+        ${level}
+      </div>`;
+    const m = createMascot(c.world, c.equipped);
     setMood(m, 'cheer');
     (layer.querySelector('.celebrate-mascot') as HTMLElement).appendChild(m);
     this.root.appendChild(layer);
     confetti(layer);
+    const num = layer.querySelector('.coin-num') as HTMLElement;
+    const steps = Math.max(1, c.coins);
+    let shown = 0;
+    const timer = window.setInterval(() => {
+      shown = Math.min(c.coins, shown + Math.ceil(steps / 12));
+      num.textContent = `+${shown}`;
+      c.onTick?.();
+      if (shown >= c.coins) window.clearInterval(timer);
+    }, 70);
+    return layer;
+  }
+
+  /** First-run choice of buddy. Resolves with the chosen world. */
+  pickBuddy(onSpeak: (text: string) => void, onTap: () => void): Promise<World> {
+    return new Promise((resolve) => {
+      const layer = document.createElement('div');
+      layer.className = 'picker';
+      layer.innerHTML = `
+        <h1>Pick your buddy!</h1>
+        <p>Your buddy plays with you every time.</p>
+        <div class="picker-cards"></div>
+        <button type="button" class="picker-go" disabled>Let's go!</button>`;
+      const cards = layer.querySelector('.picker-cards') as HTMLElement;
+      const go = layer.querySelector('.picker-go') as HTMLButtonElement;
+      let chosen: World | null = null;
+      const buttons: HTMLButtonElement[] = [];
+      (['nuzo', 'lotli', 'embrix'] as World[]).forEach((world) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = `buddy-card buddy-${world}`;
+        b.innerHTML = `<div class="buddy-art"></div><b>${CHARACTER_NAMES[world]}</b><span>${BUDDY_LINES[world]}</span>`;
+        const m = createMascot(world);
+        (b.querySelector('.buddy-art') as HTMLElement).appendChild(m);
+        b.addEventListener('click', () => {
+          onTap();
+          chosen = world;
+          buttons.forEach((x) => x.classList.toggle('chosen', x === b));
+          setMood(m, 'cheer');
+          window.setTimeout(() => setMood(m, 'idle'), 1400);
+          onSpeak(`Hi! I'm ${CHARACTER_NAMES[world]}. ${BUDDY_HELLO[world]}`);
+          go.disabled = false;
+        });
+        buttons.push(b);
+        cards.appendChild(b);
+      });
+      go.addEventListener('click', () => {
+        if (!chosen) return;
+        layer.classList.add('leaving');
+        window.setTimeout(() => {
+          layer.remove();
+          resolve(chosen as World);
+        }, 300);
+      });
+      this.root.appendChild(layer);
+      onSpeak('Pick your buddy!');
+    });
   }
 
   private makeSky(): void {
@@ -165,6 +239,31 @@ export class Stage {
     }
   }
 }
+
+export interface Celebration {
+  title: string;
+  sub: string;
+  world: World;
+  equipped: Partial<Record<Slot, string>>;
+  coins: number;
+  streakDays: number;
+  streakBonus: number;
+  levelUp: boolean;
+  level: number;
+  onTick?: () => void;
+}
+
+const BUDDY_LINES: Record<World, string> = {
+  nuzo: 'Loves numbers and space',
+  lotli: 'Loves words and stories',
+  embrix: 'Brave, strong and calm',
+};
+
+const BUDDY_HELLO: Record<World, string> = {
+  nuzo: "Let's count to the stars!",
+  lotli: "Let's play with words!",
+  embrix: "Let's be brave together!",
+};
 
 const WORLD_NAMES: Record<World, string> = {
   nuzo: 'Number Planet',

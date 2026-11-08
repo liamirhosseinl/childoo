@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import java.time.LocalDate
 import kotlinx.coroutines.flow.map
 
 /** One DataStore file per process; the delegate guarantees a single instance. */
@@ -46,6 +47,13 @@ class SettingsRepository(context: Context) {
         val RECENT_GAMES = stringPreferencesKey("recent_games")
         val PIN_HASH = stringPreferencesKey("parent_pin_hash")
         val PIN_SALT = stringPreferencesKey("parent_pin_salt")
+        val WALLET = stringPreferencesKey("wallet")
+        val COMPANION = stringPreferencesKey("companion")
+        val STREAK_DAYS = intPreferencesKey("streak_days")
+        val STREAK_LAST_DAY = longPreferencesKey("streak_last_day")
+        val VOICE_ON = booleanPreferencesKey("voice_on")
+        val EFFECTS_ON = booleanPreferencesKey("effects_on")
+        val MUSIC_ON = booleanPreferencesKey("music_on")
     }
 
     val settings: Flow<LockSettings> = store.data.map { p ->
@@ -88,8 +96,9 @@ class SettingsRepository(context: Context) {
         )
     }
 
-    /** One finished game: store its new level, remember it as recent, count it and reset the play timer. */
-    suspend fun recordGame(gameId: String, newLevel: Int) {
+    /** One finished game: store its new level, the child's coins and buddy, extend the streak, reset the timer. */
+    suspend fun recordGame(gameId: String, newLevel: Int, wallet: Wallet? = null, companion: String? = null) {
+        val today = LocalDate.now().toEpochDay()
         store.edit { p ->
             val levels = GameProgress.decodeLevels(p[Keys.GAME_LEVELS].orEmpty()) + (gameId to newLevel)
             val recent = GameProgress.pushRecent(GameProgress.decodeRecent(p[Keys.RECENT_GAMES].orEmpty()), gameId)
@@ -97,6 +106,43 @@ class SettingsRepository(context: Context) {
             p[Keys.RECENT_GAMES] = GameProgress.encodeRecent(recent)
             p[Keys.PLAYED_MS] = 0L
             p[Keys.CHALLENGES_SOLVED] = (p[Keys.CHALLENGES_SOLVED] ?: 0) + 1
+            if (wallet != null) p[Keys.WALLET] = Wallet.encode(wallet)
+            if (companion != null && companion in COMPANIONS) p[Keys.COMPANION] = companion
+            val streak = Streak(p[Keys.STREAK_DAYS] ?: 0, p[Keys.STREAK_LAST_DAY] ?: Long.MIN_VALUE).playedOn(today)
+            p[Keys.STREAK_DAYS] = streak.days
+            p[Keys.STREAK_LAST_DAY] = streak.lastDay
+        }
+    }
+
+    /** Leaving the Kid's Corner: keep purchases, outfit and buddy choice. */
+    suspend fun recordRoom(wallet: Wallet, companion: String?) {
+        store.edit { p ->
+            p[Keys.WALLET] = Wallet.encode(wallet)
+            if (companion != null && companion in COMPANIONS) p[Keys.COMPANION] = companion
+        }
+    }
+
+    val rewards: Flow<Rewards> = store.data.map { p ->
+        Rewards(
+            wallet = Wallet.decode(p[Keys.WALLET].orEmpty()),
+            companion = p[Keys.COMPANION]?.takeIf { it in COMPANIONS },
+            streak = Streak(p[Keys.STREAK_DAYS] ?: 0, p[Keys.STREAK_LAST_DAY] ?: Long.MIN_VALUE),
+        )
+    }
+
+    val soundPrefs: Flow<SoundPrefs> = store.data.map { p ->
+        SoundPrefs(
+            voice = p[Keys.VOICE_ON] ?: true,
+            effects = p[Keys.EFFECTS_ON] ?: true,
+            music = p[Keys.MUSIC_ON] ?: true,
+        )
+    }
+
+    suspend fun setSoundPrefs(prefs: SoundPrefs) {
+        store.edit {
+            it[Keys.VOICE_ON] = prefs.voice
+            it[Keys.EFFECTS_ON] = prefs.effects
+            it[Keys.MUSIC_ON] = prefs.music
         }
     }
 
@@ -153,5 +199,8 @@ class SettingsRepository(context: Context) {
         /** Product default: one 60-second challenge every 30 minutes of play. */
         const val DEFAULT_INTERVAL_MINUTES = 30
         val INTERVAL_OPTIONS = listOf(1, 5, 15, 30)
+
+        /** Buddy ids, matching the game engine's worlds. */
+        val COMPANIONS = setOf("nuzo", "lotli", "embrix")
     }
 }

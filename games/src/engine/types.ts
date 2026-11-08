@@ -1,3 +1,4 @@
+import type { Wallet } from './economy';
 import type { Rng } from './rng';
 
 export type World = 'nuzo' | 'lotli' | 'embrix';
@@ -18,6 +19,12 @@ export interface HostConfig {
   forceLevel?: number;
   sound?: boolean;
   voice?: boolean;
+  music?: boolean;
+  /** 'challenge' (default) plays a game; 'room' opens the Kid's Corner. */
+  mode?: 'challenge' | 'room';
+  wallet?: Wallet;
+  /** Streak length if the child finishes today's challenge (computed by the host). */
+  streakDays?: number;
 }
 
 export interface Choice<T> {
@@ -89,6 +96,7 @@ export interface RoundRecord {
 }
 
 export interface SessionResult {
+  mode: 'challenge' | 'room';
   gameId: string;
   skill: string;
   world: World;
@@ -100,4 +108,9 @@ export interface SessionResult {
   extraRounds: number;
   guessing: boolean;
   durationMs: number;
+  coinsEarned: number;
+  /** The child's chosen buddy, set the first time they pick one. */
+  companion: World | null;
+  /** Full wallet after this session; the host stores it as is. */
+  wallet: Wallet;
 }

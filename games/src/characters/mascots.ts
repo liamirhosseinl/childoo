@@ -1,3 +1,5 @@
+import { ITEMS, type Slot } from '../engine/economy';
+import { clipFor } from './clips';
 import type { Mood, World } from '../engine/types';
 
 /**
@@ -57,6 +59,7 @@ const NUZO = `
   </defs>
   <ellipse class="shadow" cx="100" cy="190" rx="52" ry="7" fill="#000" opacity=".16"/>
   <g class="body">
+    <g class="slot slot-back"></g>
     <path d="M58 64 C52 44 60 34 70 36 C76 44 78 54 76 60 Z" fill="#B28CF5"/>
     <path d="M142 64 C148 44 140 34 130 36 C124 44 122 54 124 60 Z" fill="#B28CF5"/>
     <path d="M88 52 C90 36 110 36 112 52 Z" fill="#6FB2EA"/>
@@ -65,6 +68,8 @@ const NUZO = `
     <path d="M100 48 C146 48 168 82 168 122 C168 166 140 184 100 184 C60 184 32 166 32 122 C32 82 54 48 100 48 Z" fill="url(#nz-body)"/>
     <ellipse cx="68" cy="78" rx="17" ry="9" fill="#fff" opacity=".4" transform="rotate(-25 68 78)"/>
     ${face({ eyeY: 108, eyeDx: 26, eyeR: 12, mouthY: 136, cheekY: 128 })}
+    <g class="slot slot-face"></g>
+    <g class="slot slot-hat"></g>
   </g>
 </svg>`;
 
@@ -77,6 +82,7 @@ const LOTLI = `
   </defs>
   <ellipse class="shadow" cx="100" cy="190" rx="50" ry="7" fill="#000" opacity=".16"/>
   <g class="body">
+    <g class="slot slot-back"></g>
     <g class="gills" fill="#FF9EC8">
       <path d="M40 78 C14 60 10 44 20 40 C30 48 38 60 50 72 Z"/>
       <path d="M34 98 C8 96 0 84 6 76 C18 80 30 86 44 92 Z"/>
@@ -92,6 +98,8 @@ const LOTLI = `
     <ellipse cx="100" cy="102" rx="64" ry="54" fill="url(#lt-body)"/>
     <ellipse cx="74" cy="72" rx="16" ry="8" fill="#fff" opacity=".4" transform="rotate(-20 74 72)"/>
     ${face({ eyeY: 98, eyeDx: 30, eyeR: 10, mouthY: 122, cheekY: 116 })}
+    <g class="slot slot-face"></g>
+    <g class="slot slot-hat"></g>
   </g>
 </svg>`;
 
@@ -104,6 +112,7 @@ const EMBRIX = `
   </defs>
   <ellipse class="shadow" cx="100" cy="190" rx="50" ry="7" fill="#000" opacity=".16"/>
   <g class="body">
+    <g class="slot slot-back"></g>
     <path class="tail" d="M150 160 C182 160 190 128 172 114" fill="none" stroke="#E5672A" stroke-width="12" stroke-linecap="round"/>
     <path class="flame" d="M172 114 C160 100 170 86 176 80 C178 92 190 96 186 108 C184 114 178 116 172 114 Z" fill="#FFC145"/>
     <path d="M44 100 C16 86 8 60 22 52 C32 70 46 80 56 88 Z" fill="#FFC145" stroke="#E8A20F" stroke-width="2"/>
@@ -119,6 +128,8 @@ const EMBRIX = `
     <path d="M84 52 C80 34 92 26 96 18 C100 30 108 24 112 14 C114 30 124 34 118 52 Z" fill="#FFB52E"/>
     <ellipse cx="72" cy="76" rx="15" ry="8" fill="#fff" opacity=".35" transform="rotate(-25 72 76)"/>
     ${face({ eyeY: 100, eyeDx: 24, eyeR: 10, mouthY: 124, cheekY: 118 })}
+    <g class="slot slot-face"></g>
+    <g class="slot slot-hat"></g>
   </g>
 </svg>`;
 
@@ -126,16 +137,52 @@ const SVGS: Record<World, string> = { nuzo: NUZO, lotli: LOTLI, embrix: EMBRIX }
 
 export const CHARACTER_NAMES: Record<World, string> = { nuzo: 'Nuzo', lotli: 'Lotli', embrix: 'Embrix' };
 
-export function createMascot(world: World): HTMLElement {
+/** Where each accessory sits on each character, in the 200 × 200 drawing space. */
+const SLOTS: Record<World, Record<Slot, { x: number; y: number; size: number; rotate: number }>> = {
+  nuzo: { hat: { x: 100, y: 34, size: 58, rotate: -8 }, face: { x: 100, y: 110, size: 74, rotate: 0 }, back: { x: 166, y: 96, size: 50, rotate: 10 } },
+  lotli: { hat: { x: 100, y: 40, size: 56, rotate: -8 }, face: { x: 100, y: 100, size: 80, rotate: 0 }, back: { x: 168, y: 132, size: 46, rotate: 10 } },
+  embrix: { hat: { x: 100, y: 30, size: 58, rotate: -6 }, face: { x: 100, y: 102, size: 70, rotate: 0 }, back: { x: 40, y: 134, size: 48, rotate: -10 } },
+};
+
+export function createMascot(world: World, equipped: Partial<Record<Slot, string>> = {}): HTMLElement {
   const el = document.createElement('div');
   el.className = `mascot mascot-${world}`;
   el.dataset.mood = 'idle';
+  el.dataset.world = world;
+  const clip = clipFor(world, 'idle');
+  if (clip) {
+    el.classList.add('clip');
+    el.innerHTML = `<img class="clip-img" src="${clip}" alt="" draggable="false">`;
+    return el;
+  }
   el.innerHTML = SVGS[world];
+  dressMascot(el, world, equipped);
   return el;
+}
+
+/** Puts the equipped accessories on (or takes them off). */
+export function dressMascot(el: HTMLElement, world: World, equipped: Partial<Record<Slot, string>>): void {
+  (['hat', 'face', 'back'] as Slot[]).forEach((slot) => {
+    const g = el.querySelector(`.slot-${slot}`);
+    if (!g) return;
+    const item = ITEMS.find((i) => i.id === equipped[slot]);
+    if (!item) {
+      g.innerHTML = '';
+      return;
+    }
+    const p = SLOTS[world][slot];
+    g.innerHTML = `<text x="${p.x}" y="${p.y}" font-size="${p.size}" text-anchor="middle" dominant-baseline="central" transform="rotate(${p.rotate} ${p.x} ${p.y})">${item.emoji}</text>`;
+  });
 }
 
 export function setMood(el: HTMLElement, mood: Mood): void {
   el.dataset.mood = mood;
+  if (el.classList.contains('clip')) {
+    const img = el.querySelector('.clip-img') as HTMLImageElement | null;
+    const src = clipFor(el.dataset.world as World, mood);
+    if (img && src && !img.src.endsWith(src)) img.src = src;
+    return;
+  }
   // Restart one-shot CSS animations when the same mood fires twice in a row.
   if (mood === 'happy' || mood === 'oops' || mood === 'cheer') {
     el.classList.remove('replay');

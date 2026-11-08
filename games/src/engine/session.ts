@@ -1,8 +1,9 @@
 import type { Host } from '../bridge';
 import type { Stage } from '../ui/stage';
+import { applyEarnings, earn, levelFromXp, normalizeWallet } from './economy';
 import { createRng, type Rng } from './rng';
 import { defaultLevel, looksLikeGuessing, nextLevel } from './rules';
-import type { Choice, ChooseOptions, Game, HostConfig, Mood, RoundContext, RoundRecord, SessionResult, SfxName } from './types';
+import type { Choice, ChooseOptions, Game, HostConfig, Mood, RoundContext, RoundRecord, SessionResult, SfxName, World } from './types';
 import type { Sound } from './sound';
 
 const PRAISE = ['Yes!', 'You got it!', 'Brilliant!', 'Great thinking!', 'Nailed it!', 'Super!'];
@@ -30,6 +31,16 @@ export async function runSession(game: Game, config: HostConfig, deps: SessionDe
     if (config.voice !== false) host.speak(text);
   };
   stage.onReplayRequest = () => lastSpoken && host.speak(lastSpoken);
+
+  const wallet = normalizeWallet(config.wallet);
+  let companion: World | null = config.companion ?? null;
+  let pickedNow = false;
+  if (!companion) {
+    stage.setWorld(game.world, game.title);
+    companion = await stage.pickBuddy(speak, () => sound.play('pop'));
+    pickedNow = true;
+    sound.play('correct');
+  }
 
   stage.setWorld(game.world, game.title);
   const records: RoundRecord[] = [];
@@ -131,26 +142,54 @@ export async function runSession(game: Game, config: HostConfig, deps: SessionDe
 
   stage.clearRound();
   const guessing = game.antiGuess !== false && looksLikeGuessing(records.slice(0, game.rounds));
+
+  const firstTry = records.filter((r) => r.wrongAt.length === 0).length;
+  const streakDays = Math.max(1, config.streakDays ?? 1);
+  const earnings = earn(records.length, firstTry, streakDays);
+  const newWallet = applyEarnings(wallet, earnings.total);
+  const levelBefore = levelFromXp(wallet.xp);
+  const levelAfter = levelFromXp(newWallet.xp);
+
   const result: SessionResult = {
+    mode: 'challenge',
     gameId: game.id,
     skill: game.skill,
     world: game.world,
     level,
     newLevel: nextLevel(level, game.maxLevel, records, guessing),
     rounds: records.length,
-    firstTry: records.filter((r) => r.wrongAt.length === 0).length,
+    firstTry,
     wrong: records.reduce((n, r) => n + r.wrongAt.length, 0),
     extraRounds: extra,
     guessing,
     durationMs: Math.round(performance.now() - started),
+    coinsEarned: earnings.total,
+    companion: pickedNow ? companion : config.companion ?? companion,
+    wallet: newWallet,
   };
 
   sound.play('win');
   const name = config.childName ? `, ${config.childName}` : '';
   const title = `Amazing work${name}!`;
-  stage.celebrate(title, 'Your play time is unlocked. Have fun!', config.companion ?? game.world);
-  speak(`${title} You worked that out yourself.`);
-  await wait(2600);
+  const levelUp = levelAfter > levelBefore;
+  stage.celebrate({
+    title,
+    sub: 'Your play time is unlocked. Have fun!',
+    world: companion,
+    equipped: newWallet.equipped,
+    coins: earnings.total,
+    streakDays,
+    streakBonus: earnings.streakBonus,
+    levelUp,
+    level: levelAfter,
+    onTick: () => sound.play('tick'),
+  });
+  speak(
+    levelUp
+      ? `${title} You earned ${earnings.total} coins, and your buddy reached level ${levelAfter}!`
+      : `${title} You earned ${earnings.total} coins.`,
+  );
+  await wait(levelUp ? 4200 : 3200);
   return result;
 }
 
