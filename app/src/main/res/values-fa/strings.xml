@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">چایلدو</string>
+    <string name="challenges_solved">چالش‌های حل‌شده: %1$d</string>
+
+    <string name="protection_on">محافظت روشنه</string>
+    <string name="protection_off">محافظت خاموشه</string>
+    <string name="protection_on_hint">زمان بازی توی اپ‌های انتخاب‌شده شمرده می‌شه.</string>
+    <string name="protection_off_hint">روشنش کن تا شمارش زمان بازی شروع بشه.</string>
+    <string name="protection_needs_permissions">اول دسترسی استفاده و نمایش روی برنامه‌ها رو بده.</string>
+    <string name="protection_needs_apps">حداقل یه اپ از پایین انتخاب کن.</string>
+
+    <string name="section_permissions">دسترسی‌ها</string>
+    <string name="perm_usage_title">دسترسی به آمار استفاده</string>
+    <string name="perm_usage_body">برای اینکه بفهمیم اپ‌های انتخاب‌شده کِی بازن.</string>
+    <string name="perm_overlay_title">نمایش روی برنامه‌های دیگر</string>
+    <string name="perm_overlay_body">برای اینکه چالش روی بازی ظاهر بشه.</string>
+    <string name="perm_notifications_title">اعلان‌ها</string>
+    <string name="perm_notifications_body">نشون می‌ده که محافظت در حال اجراست.</string>
+    <string name="perm_battery_title">بدون محدودیت باتری</string>
+    <string name="perm_battery_body">تا گوشی محافظت رو توی پس‌زمینه نبنده.</string>
+    <string name="perm_grant">اجازه</string>
+    <string name="perm_granted">انجام شد</string>
+
+    <string name="xiaomi_title">شیائومی / ردمی / پوکو</string>
+    <string name="xiaomi_body">روی این گوشی دو تا کلید دیگه هم لازمه: «شروع خودکار» رو روشن کن، و توی «سایر مجوزها» گزینه‌ی «نمایش پنجره‌های بازشو هنگام اجرا در پس‌زمینه» رو مجاز کن.</string>
+    <string name="xiaomi_autostart">شروع خودکار</string>
+    <string name="xiaomi_popups">سایر مجوزها</string>
+
+    <string name="section_interval">چالش هر</string>
+    <string name="interval_minutes">%1$d دقیقه</string>
+    <string name="test_challenge">همین الان یه چالش نشون بده (تست)</string>
+
+    <string name="section_apps">اپ‌هایی که زمان صفحه حساب می‌شن (%1$d تا انتخاب شده)</string>
+    <string name="app_suggested">محبوب بین بچه‌ها</string>
+</resources>

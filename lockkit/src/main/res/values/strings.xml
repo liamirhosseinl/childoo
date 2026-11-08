@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lockkit_channel_name">Screen-time protection</string>
+    <string name="lockkit_notification_title">Childoo is on</string>
+    <string name="lockkit_notification_text">Play time is being counted. A short challenge comes at each interval.</string>
+</resources>

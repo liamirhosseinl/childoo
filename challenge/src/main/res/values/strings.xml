@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="challenge_title">Brain charge! 3 quick questions</string>
+    <string name="challenge_hint">Tap the right answer</string>
+    <string name="challenge_correct">Yes! You worked it out!</string>
+    <string name="challenge_try_again">Let\'s try another way</string>
+    <string name="challenge_done">You did it! Back to play</string>
+</resources>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Childoo</string>
+    <string name="challenges_solved">Challenges solved: %1$d</string>
+
+    <string name="protection_on">Protection is on</string>
+    <string name="protection_off">Protection is off</string>
+    <string name="protection_on_hint">Play time in the chosen apps is being counted.</string>
+    <string name="protection_off_hint">Switch on to start counting play time.</string>
+    <string name="protection_needs_permissions">Grant usage access and overlay first.</string>
+    <string name="protection_needs_apps">Pick at least one app below.</string>
+
+    <string name="section_permissions">Permissions</string>
+    <string name="perm_usage_title">Usage access</string>
+    <string name="perm_usage_body">To know when the chosen apps are open.</string>
+    <string name="perm_overlay_title">Display over other apps</string>
+    <string name="perm_overlay_body">To show the challenge on top of the game.</string>
+    <string name="perm_notifications_title">Notifications</string>
+    <string name="perm_notifications_body">Shows that protection is running.</string>
+    <string name="perm_battery_title">No battery limits</string>
+    <string name="perm_battery_body">So the phone does not stop protection in the background.</string>
+    <string name="perm_grant">Allow</string>
+    <string name="perm_granted">Done</string>
+
+    <string name="xiaomi_title">Xiaomi / Redmi / POCO</string>
+    <string name="xiaomi_body">On this phone two more switches are needed: turn on Autostart, and in Other permissions allow \"Display pop-up windows while running in the background\".</string>
+    <string name="xiaomi_autostart">Autostart</string>
+    <string name="xiaomi_popups">Other permissions</string>
+
+    <string name="section_interval">Challenge every</string>
+    <string name="interval_minutes">%1$d min</string>
+    <string name="test_challenge">Show a challenge now (test)</string>
+
+    <string name="section_apps">Apps that cost screen time (%1$d chosen)</string>
+    <string name="app_suggested">Popular with kids</string>
+</resources>

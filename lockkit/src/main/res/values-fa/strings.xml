@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lockkit_channel_name">محافظت از زمان صفحه</string>
+    <string name="lockkit_notification_title">چایلدو روشنه</string>
+    <string name="lockkit_notification_text">زمان بازی شمرده می‌شه. سر هر بازه یه چالش کوتاه میاد.</string>
+</resources>
