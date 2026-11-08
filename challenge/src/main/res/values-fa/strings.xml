@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="challenge_title">شارژ مغز</string>
-    <string name="challenge_hint">جواب درست رو بزن</string>
-    <string name="challenge_correct">آره! خودت پیداش کردی!</string>
-    <string name="challenge_try_again">هوم، بیا یه راه دیگه امتحان کنیم</string>
-    <string name="challenge_done">آفرین، عالی بود!</string>
-    <string name="challenge_done_sub">زمان بازیت باز شد. خوش بگذره!</string>
-</resources>

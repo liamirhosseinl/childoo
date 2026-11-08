@@ -12,6 +12,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -40,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -54,6 +63,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.childoo.core.ChildProfile
 import com.childoo.core.LockSettings
 import com.childoo.core.SettingsRepository
 import com.childoo.designsystem.ChildooColors
@@ -64,11 +74,10 @@ import com.childoo.designsystem.Nuzo
 import com.childoo.designsystem.NuzoMood
 import com.childoo.designsystem.Pill
 import com.childoo.designsystem.StarrySky
-import com.childoo.designsystem.localDigits
 import com.childoo.lockkit.LockKit
 import kotlinx.coroutines.launch
 
-private enum class Step { Welcome, Apps, Interval, Permissions, Xiaomi, Ready }
+private enum class Step { Welcome, Child, Apps, Interval, Permissions, Xiaomi, Pin, Ready }
 
 /** First-run setup for the parent, one decision per screen. */
 @Composable
@@ -77,14 +86,18 @@ fun OnboardingFlow(repo: SettingsRepository) {
     val scope = rememberCoroutineScope()
     val settings by repo.settings.collectAsStateWithLifecycle(initialValue = LockSettings())
     val perms by rememberPermissionState()
+    var childName by rememberSaveable { mutableStateOf("") }
+    var childAge by rememberSaveable { mutableIntStateOf(ChildProfile.DEFAULT_AGE) }
 
     val steps = remember {
         buildList {
             add(Step.Welcome)
+            add(Step.Child)
             add(Step.Apps)
             add(Step.Interval)
             add(Step.Permissions)
             if (Permissions.isXiaomiFamily) add(Step.Xiaomi)
+            add(Step.Pin)
             add(Step.Ready)
         }
     }
@@ -122,6 +135,12 @@ fun OnboardingFlow(repo: SettingsRepository) {
         ) { i ->
             when (steps[i]) {
                 Step.Welcome -> WelcomeStep()
+                Step.Child -> ChildStep(
+                    name = childName,
+                    age = childAge,
+                    onName = { childName = it },
+                    onAge = { childAge = it },
+                )
                 Step.Apps -> AppPicker(
                     selected = settings.targetPackages,
                     onToggle = { pkg -> scope.launch { repo.toggleTarget(pkg) } },
@@ -143,14 +162,27 @@ fun OnboardingFlow(repo: SettingsRepository) {
                         title = stringResource(R.string.ob_perms_title),
                         body = stringResource(R.string.ob_perms_body),
                     )
-                    PermissionChecklist(perms)
+                    GuidedPermissions(perms)
                 }
                 Step.Xiaomi -> ScrollStep {
                     StepHeader(
                         title = stringResource(R.string.ob_xiaomi_title),
                         body = stringResource(R.string.ob_xiaomi_body),
                     )
-                    XiaomiChecklist()
+                    XiaomiChecklist(perms)
+                }
+                Step.Pin -> ScrollStep {
+                    PinSetup(
+                        onPinChosen = { pin ->
+                            scope.launch {
+                                repo.setPin(pin)
+                                next()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                    )
                 }
                 Step.Ready -> ReadyStep(
                     appCount = settings.targetPackages.size,
@@ -168,6 +200,16 @@ fun OnboardingFlow(repo: SettingsRepository) {
                     text = stringResource(R.string.ob_welcome_cta),
                     onClick = ::next,
                 )
+                Step.Child -> ChunkyButton(
+                    text = stringResource(R.string.ob_continue),
+                    onClick = {
+                        scope.launch {
+                            repo.setChild(childName, childAge)
+                            next()
+                        }
+                    },
+                )
+                Step.Pin -> Unit
                 Step.Apps -> ChunkyButton(
                     text = if (settings.targetPackages.isEmpty()) {
                         stringResource(R.string.ob_apps_cta_empty)
@@ -175,7 +217,7 @@ fun OnboardingFlow(repo: SettingsRepository) {
                         pluralStringResource(
                             R.plurals.ob_apps_cta,
                             settings.targetPackages.size,
-                            localDigits(settings.targetPackages.size.toString()),
+                            settings.targetPackages.size,
                         )
                     },
                     enabled = settings.targetPackages.isNotEmpty(),
@@ -278,12 +320,6 @@ private fun WelcomeStep() {
                         .width(170.dp),
                     mood = NuzoMood.Happy,
                 )
-                LanguageToggle(
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp),
-                    onDark = true,
-                )
                 Text(
                     stringResource(R.string.app_name),
                     style = MaterialTheme.typography.titleLarge,
@@ -349,7 +385,7 @@ private fun IntervalCard(choice: IntervalChoice, selected: Boolean, onClick: () 
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(64.dp)) {
             Text(
-                localDigits(choice.minutes.toString()),
+                choice.minutes.toString(),
                 style = MaterialTheme.typography.headlineLarge,
                 color = if (selected) ChildooColors.Gold else ChildooColors.Navy,
             )
@@ -409,14 +445,14 @@ private fun ReadyStep(appCount: Int, interval: Int, canTest: Boolean, onTest: ()
                 SummaryTile(
                     icon = Icons.Rounded.Apps,
                     tint = ChildooColors.Sky,
-                    value = localDigits(appCount.toString()),
+                    value = appCount.toString(),
                     label = stringResource(R.string.summary_apps),
                     modifier = Modifier.weight(1f),
                 )
                 SummaryTile(
                     icon = Icons.Rounded.Timer,
                     tint = ChildooColors.Coral,
-                    value = localDigits(interval.toString()),
+                    value = interval.toString(),
                     label = stringResource(R.string.summary_interval),
                     modifier = Modifier.weight(1f),
                 )
@@ -452,5 +488,59 @@ private fun SummaryTile(
         Spacer(Modifier.height(10.dp))
         Text(value, style = MaterialTheme.typography.headlineMedium, color = ChildooColors.Navy)
         Text(label, style = MaterialTheme.typography.bodySmall, color = ChildooColors.InkSoft)
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ChildStep(name: String, age: Int, onName: (String) -> Unit, onAge: (Int) -> Unit) {
+    ScrollStep {
+        StepHeader(
+            title = stringResource(R.string.ob_child_title),
+            body = stringResource(R.string.ob_child_body),
+        )
+        OutlinedTextField(
+            value = name,
+            onValueChange = { onName(it.take(24)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(18.dp),
+            label = { Text(stringResource(R.string.ob_child_name)) },
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                unfocusedBorderColor = ChildooColors.Line,
+                focusedBorderColor = ChildooColors.Navy,
+            ),
+        )
+        Spacer(Modifier.height(24.dp))
+        Text(stringResource(R.string.ob_child_age), style = MaterialTheme.typography.titleMedium, color = ChildooColors.Navy)
+        Spacer(Modifier.height(12.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            ChildProfile.AGE_OPTIONS.forEach { option ->
+                val selected = option == age
+                Box(
+                    Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(if (selected) ChildooColors.Navy else Color.White)
+                        .border(1.5.dp, if (selected) ChildooColors.Navy else ChildooColors.Line, RoundedCornerShape(20.dp))
+                        .clickable { onAge(option) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        if (option == ChildProfile.MAX_AGE) "$option+" else option.toString(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = if (selected) ChildooColors.Gold else ChildooColors.Navy,
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(stringResource(R.string.ob_child_age_hint), style = MaterialTheme.typography.bodySmall, color = ChildooColors.InkSoft)
     }
 }

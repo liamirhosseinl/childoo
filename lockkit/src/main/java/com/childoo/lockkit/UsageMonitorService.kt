@@ -14,9 +14,13 @@ import android.os.PowerManager
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import com.childoo.core.ChildProfile
+import com.childoo.core.GameProgress
 import com.childoo.core.LockSettings
 import com.childoo.core.PlayTimeAccumulator
 import com.childoo.core.SettingsRepository
+import com.childoo.gamehost.GameConfig
+import com.childoo.gamehost.GameResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,6 +45,8 @@ class UsageMonitorService : Service() {
     private lateinit var power: PowerManager
 
     private var settings = LockSettings()
+    private var child = ChildProfile()
+    private var progress = GameProgress()
     private var accumulator = PlayTimeAccumulator()
     private var loop: Job? = null
 
@@ -52,6 +58,7 @@ class UsageMonitorService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        isRunning = true
         repo = SettingsRepository(this)
         detector = ForegroundAppDetector(this)
         overlay = OverlayController(this)
@@ -79,7 +86,11 @@ class UsageMonitorService : Service() {
     private suspend fun runLoop() {
         accumulator = PlayTimeAccumulator(initialPlayedMs = repo.playedSinceChallengeMs.first())
         scope.launch { repo.settings.collect { settings = it } }
+        scope.launch { repo.child.collect { child = it } }
+        scope.launch { repo.gameProgress.collect { progress = it } }
         settings = repo.settings.first()
+        child = repo.child.first()
+        progress = repo.gameProgress.first()
 
         var lastTick = SystemClock.elapsedRealtime()
         var lastSave = lastTick
@@ -94,8 +105,10 @@ class UsageMonitorService : Service() {
                 return
             }
 
-            val front = if (power.isInteractive) detector.poll() else null
-            val inTarget = front != null && front in settings.targetPackages
+            val snapshot = if (power.isInteractive) detector.poll() else null
+            val front = snapshot?.front
+            // A target counts while it is anywhere on screen, including picture-in-picture and split screen.
+            val inTarget = snapshot != null && snapshot.visible.any { it in settings.targetPackages }
 
             if (!challengeDue) {
                 accumulator.tick(elapsed, inTarget)
@@ -106,7 +119,7 @@ class UsageMonitorService : Service() {
                 (challengeDue || testMode) && inTarget -> showChallenge()
                 // Child left the target app (home, another app): get out of the way.
                 // The challenge comes back the moment they reopen the target app.
-                overlay.isShowing && !testMode && front != null && front != packageName -> overlay.hide()
+                overlay.isShowing && !testMode && snapshot != null && !inTarget && front != packageName -> overlay.hide()
             }
 
             if (now - lastSave >= SAVE_EVERY_MS) {
@@ -117,17 +130,25 @@ class UsageMonitorService : Service() {
     }
 
     private fun showChallenge() {
-        overlay.show(onSolved = ::onChallengeSolved)
+        val config = GameConfig(
+            age = child.age,
+            childName = child.name,
+            levels = progress.levels,
+            recent = progress.recent,
+        )
+        overlay.show(config, onDone = ::onChallengeSolved)
     }
 
-    private fun onChallengeSolved() {
+    private fun onChallengeSolved(result: GameResult?) {
         overlay.hide()
         val wasTest = testMode
         testMode = false
         if (wasTest) return
         challengeDue = false
         accumulator.reset()
-        scope.launch { repo.recordChallengeSolved() }
+        scope.launch {
+            if (result != null) repo.recordGame(result.gameId, result.newLevel) else repo.recordChallengeSolved()
+        }
     }
 
     private fun stopSelfCleanly() {
@@ -139,6 +160,7 @@ class UsageMonitorService : Service() {
     }
 
     override fun onDestroy() {
+        isRunning = false
         overlay.hide()
         val played = accumulator.playedMs
         // Best effort final save; the scope is cancelled right after.
@@ -182,6 +204,11 @@ class UsageMonitorService : Service() {
     }
 
     companion object {
+        /** True while this process has the service alive; read by the watchdog. */
+        @Volatile
+        var isRunning: Boolean = false
+            private set
+
         const val ACTION_START = "com.childoo.lockkit.START"
         const val ACTION_STOP = "com.childoo.lockkit.STOP"
         const val ACTION_TEST_CHALLENGE = "com.childoo.lockkit.TEST_CHALLENGE"

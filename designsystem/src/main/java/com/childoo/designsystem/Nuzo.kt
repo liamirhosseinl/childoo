@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 enum class NuzoMood { Happy, Thinking, Oops, Cheer }
 
 /**
- * Nuzo, the space-blob companion, drawn in code so it stays crisp at any size and costs no assets.
+ * Nuzo, the little blue explorer with purple horns, drawn in code so it stays crisp at any size and costs no assets.
  * Placeholder until the rigged character ships; the public API (mood) will stay the same.
  */
 @Composable
@@ -101,24 +101,32 @@ private fun DrawScope.drawNuzo(w: Float, h: Float, mood: NuzoMood, blink: Float,
     val left = cx - bodyW / 2f
     val right = cx + bodyW / 2f
 
-    // Antenna with a glowing mint bulb.
-    val stemTop = h * 0.08f
-    drawLine(
-        color = ChildooColors.GoldDeep,
-        start = Offset(cx, bodyTop + h * 0.04f),
-        end = Offset(cx, stemTop),
-        strokeWidth = w * 0.035f,
-        cap = StrokeCap.Round,
+    // Two little purple horns and a soft spike between them.
+    val hornL = Path().apply {
+        moveTo(cx - bodyW * 0.30f, bodyTop + h * 0.07f)
+        quadraticTo(cx - bodyW * 0.38f, bodyTop - h * 0.06f, cx - bodyW * 0.26f, bodyTop - h * 0.07f)
+        quadraticTo(cx - bodyW * 0.20f, bodyTop - h * 0.02f, cx - bodyW * 0.18f, bodyTop + h * 0.05f)
+        close()
+    }
+    val hornR = Path().apply {
+        moveTo(cx + bodyW * 0.30f, bodyTop + h * 0.07f)
+        quadraticTo(cx + bodyW * 0.38f, bodyTop - h * 0.06f, cx + bodyW * 0.26f, bodyTop - h * 0.07f)
+        quadraticTo(cx + bodyW * 0.20f, bodyTop - h * 0.02f, cx + bodyW * 0.18f, bodyTop + h * 0.05f)
+        close()
+    }
+    drawPath(hornL, ChildooColors.NuzoHorn)
+    drawPath(hornR, ChildooColors.NuzoHorn)
+    drawOval(
+        color = ChildooColors.NuzoDeep.copy(alpha = 0.55f + glow * 0.2f),
+        topLeft = Offset(cx - w * 0.07f, bodyTop - h * 0.035f),
+        size = Size(w * 0.14f, h * 0.09f),
     )
-    drawCircle(ChildooColors.MintLight.copy(alpha = glow * 0.45f), radius = w * 0.085f, center = Offset(cx, stemTop))
-    drawCircle(ChildooColors.MintLight, radius = w * 0.05f, center = Offset(cx, stemTop))
-    drawCircle(Color.White.copy(alpha = 0.7f), radius = w * 0.016f, center = Offset(cx - w * 0.015f, stemTop - w * 0.015f))
 
     // Little feet.
     val footW = w * 0.2f
     val footH = h * 0.07f
-    drawOval(ChildooColors.GoldDeep, Offset(cx - w * 0.27f, bodyBottom - footH * 0.7f), Size(footW, footH))
-    drawOval(ChildooColors.GoldDeep, Offset(cx + w * 0.07f, bodyBottom - footH * 0.7f), Size(footW, footH))
+    drawOval(ChildooColors.NuzoDeep, Offset(cx - w * 0.27f, bodyBottom - footH * 0.7f), Size(footW, footH))
+    drawOval(ChildooColors.NuzoDeep, Offset(cx + w * 0.07f, bodyBottom - footH * 0.7f), Size(footW, footH))
 
     // Body: a soft gumdrop shape.
     val body = Path().apply {
@@ -132,7 +140,7 @@ private fun DrawScope.drawNuzo(w: Float, h: Float, mood: NuzoMood, blink: Float,
     drawPath(
         path = body,
         brush = Brush.radialGradient(
-            colors = listOf(ChildooColors.GoldLight, ChildooColors.Gold, ChildooColors.GoldDeep),
+            colors = listOf(ChildooColors.NuzoLight, ChildooColors.NuzoBlue, ChildooColors.NuzoDeep),
             center = Offset(cx - bodyW * 0.18f, h * 0.42f),
             radius = bodyW * 0.85f,
         ),

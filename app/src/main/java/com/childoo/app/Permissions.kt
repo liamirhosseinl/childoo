@@ -64,8 +64,10 @@ object Permissions {
         return power.isIgnoringBatteryOptimizations(context.packageName)
     }
 
+    /** Opens Childoo's own Usage access page where the OS supports it, otherwise the full list. */
     fun openUsageAccess(context: Context) = open(
         context,
+        Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS, packageUri(context)),
         Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS),
     )
 

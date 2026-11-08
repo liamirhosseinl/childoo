@@ -30,24 +30,27 @@ The parent picks the apps that cost screen time — YouTube, TikTok, Roblox, any
 | **Default rule** | One ~60-second challenge for every 30 minutes of play |
 | **Tone** | Effort is praised, mistakes are never punished — a wrong answer just means "let's try another way" |
 | **Privacy** | Everything runs on the device. No accounts, no tracking, no data leaves the phone |
-| **Languages** | English, Persian (فارسی) with full RTL support |
+| **Languages** | English (more languages planned) |
 
 ## Features
 
 **Current prototype**
 
+- **14 learning games in three worlds.** Number Planet (counting, number bonds, balance, number line, fair sharing, patterns), Word Lagoon (first sounds, spelling, rhyme, categories, sight words) and Courage Mountain (calm breathing, movement, memory). Every game explains *why* after a correct answer.
+- **Adaptive and fair.** Levels follow each child's results per game; random tapping is detected and answered with one more round, never with punishment. Prompts are read aloud for pre-readers.
 - **App-aware play timer.** Counts only the time spent in the apps the parent chose, and only while the screen is on.
 - **Challenge overlay.** A full-screen challenge appears over the target app as soon as the interval is used up. The Back button cannot dismiss it.
-- **Fair by design.** If the child leaves the app, the challenge steps aside. It returns, unsolved, the moment they come back.
+- **Fair by design.** If the child leaves the app, the challenge steps aside. It returns, unsolved, the moment they come back. Picture-in-picture and split screen count as on screen.
+- **Video pauses.** The video behind the challenge pauses while the child plays and resumes afterwards.
+- **Parent PIN.** Settings and the off switch sit behind a 4-digit PIN, with lockout after repeated tries.
+- **Self-healing.** A watchdog restarts protection if the system kills it.
 - **Survives restarts.** Protection resumes automatically after a reboot or an app update. Play time is persisted, so force-closing does not reset it.
-- **Guided onboarding.** One decision per screen: apps, interval, permissions, done — with dedicated steps for Xiaomi, Redmi and POCO devices.
+- **Guided onboarding.** One decision per screen: child, apps, interval, permissions, PIN. Only two system switches are required, and the app returns to the front by itself after each one.
 - **Parent dashboard.** Live countdown to the next challenge, challenges solved, protected apps and interval at a glance.
-- **Bilingual.** English and Persian with an in-app switch, right-to-left layout and Persian numerals.
 - **Instant test mode.** Trigger a challenge on demand to verify the setup in seconds.
 
 **On the roadmap**
 
-- Mini-game engine with a growing library of math, language, logic and movement challenges
 - Companion characters — **Nuzo**, **Lotli** and **Embrix** — that the child picks, grows and customises
 - Parent PIN gate, tamper alerts and weekly progress reports
 - Subscription plans and a parent web dashboard
@@ -58,40 +61,42 @@ The parent picks the apps that cost screen time — YouTube, TikTok, Roblox, any
 Childoo is a multi-module Android project. Each module has one responsibility and can be developed, tested and replaced on its own.
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│ :app        Onboarding · parent dashboard · app picker   │
-└───────┬──────────────────────┬──────────────────┬────────┘
-        │                      │                  │
-┌───────▼─────────────┐ ┌──────▼─────────────┐    │
-│ :lockkit            │ │ :challenge         │    │
-│ App detection       │─▶ Challenge UI       │    │
-│ Monitor service     │ │ Question engine    │    │
-│ Overlay · restore   │ └──────┬─────────────┘    │
-└───────┬─────────────┘        │                  │
-        │               ┌──────▼──────────────────▼──────┐
-        │               │ :designsystem                  │
-        │               │ Theme · type · Nuzo · widgets  │
-        │               └────────────────────────────────┘
-┌───────▼─────────────────────────────────────────────────┐
-│ :core       Settings (DataStore) · play-time rules       │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ :app        Onboarding · parent PIN · dashboard · app picker │
+└──────┬──────────────────────────────────────────────┬────────┘
+       │                                              │
+┌──────▼──────────────┐   ┌───────────────────┐   ┌───▼──────────────┐
+│ :lockkit            │──▶│ :gamehost         │   │ :designsystem    │
+│ App detection       │   │ WebView · bridge  │   │ Theme · fonts    │
+│ Monitor service     │   │ Voice · haptics   │   │ Nuzo · widgets   │
+│ Overlay · watchdog  │   └────────┬──────────┘   └──────────────────┘
+└──────┬──────────────┘            │ assets/games (built from games/)
+       │                  ┌────────▼──────────┐
+       │                  │ games/ (TypeScript)│
+       │                  │ Engine · 14 games │
+       │                  └───────────────────┘
+┌──────▼──────────────────────────────────────────────────────┐
+│ :core       Settings (DataStore) · play-time rules · PIN      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 | Module | Responsibility | Key types |
 |---|---|---|
 | `core` | Persisted parent settings and the pure play-time logic | `SettingsRepository`, `LockSettings`, `PlayTimeAccumulator` |
 | `designsystem` | Brand theme, typography, the Nuzo character and shared components | `ChildooTheme`, `Nuzo`, `StarrySky`, `ChunkyButton` |
-| `challenge` | The challenge experience the child sees | `ChallengeScreen`, `MathQuestion` |
+| `gamehost` | Runs the web game engine offline in a WebView, with voice and haptics | `GameView`, `GameBridge`, `GameConfig`, `GameResult` |
+| `games/` | The game engine and all games (TypeScript, no framework) | `runSession`, `pickGame`, `Stage`, `GAMES` |
+| `challenge` | Native fallback challenge for devices without a working WebView | `ChallengeScreen`, `MathQuestion` |
 | `lockkit` | Everything that enforces the rule at runtime | `UsageMonitorService`, `ForegroundAppDetector`, `OverlayController`, `LockKit` |
-| `app` | Parent onboarding, dashboard and settings | `OnboardingFlow`, `HomeScreen`, `AppPicker`, `Permissions` |
+| `app` | Parent onboarding, PIN gate, dashboard and settings | `OnboardingFlow`, `ParentGate`, `HomeScreen`, `GuidedPermissions` |
 
 ### How enforcement works
 
 1. `UsageMonitorService` runs as a foreground service (`specialUse`, parental control) and ticks once per second.
 2. `ForegroundAppDetector` reads `UsageStatsManager` events incrementally to know which app is in front.
 3. `PlayTimeAccumulator` adds time only when a target app is in front and the screen is interactive. Long gaps such as device sleep are capped, so they never count as play.
-4. When the interval is reached, `OverlayController` attaches a `TYPE_APPLICATION_OVERLAY` window that hosts the Compose challenge.
-5. Solving the challenge resets the counter and records the result.
+4. When the interval is reached, `OverlayController` attaches a `TYPE_APPLICATION_OVERLAY` window, takes audio focus so the video pauses, and loads the game engine from the app's own assets.
+5. The engine picks a game for the child's age and history, plays it, and hands back the result. The new level is stored, the counter resets and play resumes.
 
 ## Tech stack
 
@@ -99,7 +104,8 @@ Childoo is a multi-module Android project. Each module has one responsibility an
 |---|---|
 | Language | Kotlin 2.2 |
 | UI | Jetpack Compose · Material 3 |
-| Typography | Vazirmatn (Latin + Persian), bundled |
+| Games | TypeScript, Vite, Vitest; no runtime dependencies |
+| Typography | Fredoka (display) and Nunito (text), bundled |
 | Persistence | Jetpack DataStore (Preferences) |
 | Concurrency | Kotlin Coroutines & Flow |
 | Build | Gradle 8.13 · Android Gradle Plugin 8.11 · version catalog |
@@ -115,6 +121,18 @@ Childoo is a multi-module Android project. Each module has one responsibility an
 - An Android 8.0+ device or emulator
 
 ### Build and run
+
+The games are built into `gamehost/src/main/assets/games` and committed, so the Android build needs no Node.js. After changing anything in `games/`:
+
+```bash
+cd games
+npm ci
+npm test          # engine rules
+npm run build     # rebuilds the bundle in gamehost/src/main/assets/games
+npm run dev       # play in a browser: http://localhost:5173/?game=space-scale&level=3
+```
+
+Then build the app:
 
 ```bash
 git clone https://github.com/liamirhosseinl/childoo.git
@@ -151,8 +169,8 @@ Childoo needs a few system permissions to do its job. The setup screen links str
 
 ### Quick test
 
-1. Complete onboarding: pick YouTube, choose **Try it out (1 min)**, grant the permissions.
-2. Tap **Preview a challenge** to confirm the overlay appears.
+1. Complete onboarding: pick YouTube, choose **Try it out (1 min)**, grant the two permissions, create a PIN.
+2. Tap **Try a game now** to confirm the overlay appears.
 3. Turn protection on.
 4. Open YouTube and watch for a minute — the challenge appears.
 
@@ -167,7 +185,7 @@ Childoo is built for children, so privacy is the default rather than a setting.
 
 ## Third-party assets
 
-- [Vazirmatn](https://github.com/rastikerdar/vazirmatn) font, SIL Open Font License 1.1 — see `docs/licenses/Vazirmatn-OFL.txt`.
+- [Fredoka](https://github.com/google/fonts/tree/main/ofl/fredoka) and [Nunito](https://github.com/google/fonts/tree/main/ofl/nunito) fonts, SIL Open Font License 1.1 — see `docs/licenses/`.
 
 ## Project structure
 
@@ -177,6 +195,8 @@ childoo/
 ├── lockkit/             Runtime enforcement
 ├── challenge/           Challenge UI and content
 ├── designsystem/        Theme, typography and characters
+├── gamehost/            WebView host for the games
+├── games/               Game engine and games (TypeScript)
 ├── core/                Settings and shared logic
 ├── gradle/              Version catalog and wrapper
 └── .github/workflows/   CI pipeline

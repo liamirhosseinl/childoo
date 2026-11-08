@@ -30,11 +30,13 @@ kotlin {
 dependencies {
     implementation(project(":core"))
     implementation(project(":challenge"))
+    implementation(project(":gamehost"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.savedstate.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.work.runtime.ktx)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

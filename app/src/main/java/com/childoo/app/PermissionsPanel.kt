@@ -2,6 +2,7 @@ package com.childoo.app
 
 import android.Manifest
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -26,8 +27,11 @@ import androidx.compose.material.icons.rounded.BatteryChargingFull
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.PhonelinkLock
 import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.Widgets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -50,93 +54,223 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.childoo.designsystem.ChildooColors
+import com.childoo.designsystem.ChunkyButton
 import com.childoo.designsystem.GhostButton
 import com.childoo.designsystem.IconBadge
 import com.childoo.designsystem.Pill
-import com.childoo.designsystem.localDigits
 
 /** Live permission snapshot, refreshed every time the parent comes back from a settings screen. */
 @Composable
 fun rememberPermissionState(): State<PermissionState> {
     val context = LocalContext.current
     val state = remember { mutableStateOf(PermissionState.read(context)) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { state.value = PermissionState.read(context) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        AutoReturn.cancel()
+        state.value = PermissionState.read(context)
+    }
     return state
 }
 
-/** All system permissions as friendly cards, required ones first. */
-@Composable
-fun PermissionChecklist(perms: PermissionState, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+/** The two switches Childoo cannot work without, in the order that lets the app return by itself. */
+private enum class Required { Overlay, Usage }
 
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        PermissionCard(
-            icon = Icons.Rounded.BarChart,
-            tint = ChildooColors.Sky,
-            title = stringResource(R.string.perm_usage_title),
-            body = stringResource(R.string.perm_usage_body),
-            required = true,
-            granted = perms.usageAccess,
-            onGrant = { Permissions.openUsageAccess(context) },
-        ) {
-            if (!perms.usageAccess && Permissions.mayHitRestrictedSettings) {
-                RestrictedSettingsHelp(onOpenAppInfo = { Permissions.openAppDetails(context) })
-            }
-        }
-        PermissionCard(
+/**
+ * One guided flow instead of a checklist: a trust card, then a single button that opens exactly
+ * the next switch and brings the parent back automatically. Two steps in total.
+ */
+@Composable
+fun GuidedPermissions(perms: PermissionState, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val next = when {
+        !perms.overlay -> Required.Overlay
+        !perms.usageAccess -> Required.Usage
+        else -> null
+    }
+    val doneCount = listOf(perms.overlay, perms.usageAccess).count { it }
+
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        TrustCard()
+
+        StepRow(
+            number = 1,
             icon = Icons.Rounded.Layers,
             tint = ChildooColors.Lilac,
             title = stringResource(R.string.perm_overlay_title),
             body = stringResource(R.string.perm_overlay_body),
-            required = true,
-            granted = perms.overlay,
-            onGrant = { Permissions.openOverlay(context) },
+            done = perms.overlay,
+            active = next == Required.Overlay,
         )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            PermissionCard(
-                icon = Icons.Rounded.Notifications,
-                tint = ChildooColors.Coral,
-                title = stringResource(R.string.perm_notifications_title),
-                body = stringResource(R.string.perm_notifications_body),
-                required = false,
-                granted = perms.notifications,
-                onGrant = { notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
+        StepRow(
+            number = 2,
+            icon = Icons.Rounded.BarChart,
+            tint = ChildooColors.Sky,
+            title = stringResource(R.string.perm_usage_title),
+            body = stringResource(R.string.perm_usage_body),
+            done = perms.usageAccess,
+            active = next == Required.Usage,
+        )
+
+        if (next != null) {
+            ChunkyButton(
+                text = stringResource(
+                    if (next == Required.Overlay) R.string.perm_cta_overlay else R.string.perm_cta_usage,
+                    doneCount + 1,
+                ),
+                onClick = {
+                    when (next) {
+                        Required.Overlay -> {
+                            AutoReturn.watch(context) { Settings.canDrawOverlays(it) }
+                            Permissions.openOverlay(context)
+                        }
+                        Required.Usage -> {
+                            AutoReturn.watch(context) { Permissions.hasUsageAccess(it) }
+                            Permissions.openUsageAccess(context)
+                        }
+                    }
+                },
             )
+            Text(
+                stringResource(R.string.perm_cta_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = ChildooColors.InkSoft,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (next == Required.Usage && Permissions.mayHitRestrictedSettings) {
+                RestrictedSettingsHelp(onOpenAppInfo = { Permissions.openAppDetails(context) })
+            }
+        } else {
+            AllSetRow()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !perms.notifications) {
+                NotificationOptIn()
+            }
         }
-        PermissionCard(
-            icon = Icons.Rounded.BatteryChargingFull,
-            tint = ChildooColors.Mint,
-            title = stringResource(R.string.perm_battery_title),
-            body = stringResource(R.string.perm_battery_body),
-            required = false,
-            granted = perms.batteryUnrestricted,
-            onGrant = { Permissions.openBattery(context) },
-        )
     }
 }
 
 @Composable
-private fun PermissionCard(
+private fun TrustCard() {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(ChildooColors.Navy)
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        TrustLine(Icons.Rounded.VisibilityOff, stringResource(R.string.trust_screen))
+        TrustLine(Icons.Rounded.PhonelinkLock, stringResource(R.string.trust_device))
+        TrustLine(Icons.Rounded.Lock, stringResource(R.string.trust_pin))
+    }
+}
+
+@Composable
+private fun TrustLine(icon: ImageVector, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = ChildooColors.Gold, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(12.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = Color.White)
+    }
+}
+
+@Composable
+private fun StepRow(
+    number: Int,
     icon: ImageVector,
     tint: Color,
     title: String,
     body: String,
-    required: Boolean,
-    granted: Boolean,
-    onGrant: () -> Unit,
-    extra: @Composable () -> Unit = {},
+    done: Boolean,
+    active: Boolean,
 ) {
+    val shape = RoundedCornerShape(22.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Color.White)
+            .border(
+                width = if (active) 2.dp else 1.5.dp,
+                color = when {
+                    done -> ChildooColors.Mint.copy(alpha = 0.4f)
+                    active -> ChildooColors.Gold
+                    else -> ChildooColors.Line
+                },
+                shape = shape,
+            )
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconBadge(icon, tint)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                stringResource(R.string.perm_step, number),
+                style = MaterialTheme.typography.labelSmall,
+                color = ChildooColors.InkSoft,
+            )
+            Text(title, style = MaterialTheme.typography.titleSmall, color = ChildooColors.Ink)
+            Text(body, style = MaterialTheme.typography.bodySmall, color = ChildooColors.InkSoft)
+        }
+        Spacer(Modifier.width(10.dp))
+        if (done) {
+            Box(
+                Modifier
+                    .size(34.dp)
+                    .background(ChildooColors.Mint, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.perm_granted), tint = Color.White, modifier = Modifier.size(20.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AllSetRow() {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(ChildooColors.Mint.copy(alpha = 0.12f))
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.Check, contentDescription = null, tint = ChildooColors.Mint)
+        Spacer(Modifier.width(10.dp))
+        Text(stringResource(R.string.perm_all_set), style = MaterialTheme.typography.titleSmall, color = ChildooColors.Mint)
+    }
+}
+
+@Composable
+private fun NotificationOptIn() {
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    OptionalCard(
+        icon = Icons.Rounded.Notifications,
+        tint = ChildooColors.Coral,
+        title = stringResource(R.string.perm_notifications_title),
+        body = stringResource(R.string.perm_notifications_body),
+        action = stringResource(R.string.perm_grant),
+        onAction = { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) },
+    )
+}
+
+@Composable
+private fun OptionalCard(
+    icon: ImageVector,
+    tint: Color,
+    title: String,
+    body: String,
+    action: String,
+    onAction: () -> Unit,
+    footer: @Composable () -> Unit = {},
+) {
+    val shape = RoundedCornerShape(22.dp)
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(shape)
             .background(Color.White)
-            .border(
-                width = 1.5.dp,
-                color = if (granted) ChildooColors.Mint.copy(alpha = 0.35f) else ChildooColors.Line,
-                shape = RoundedCornerShape(22.dp),
-            )
+            .border(1.5.dp, ChildooColors.Line, shape)
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -146,47 +280,30 @@ private fun PermissionCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(title, style = MaterialTheme.typography.titleSmall, color = ChildooColors.Ink, modifier = Modifier.weight(1f, fill = false))
                     Spacer(Modifier.width(8.dp))
-                    if (!granted) {
-                        Pill(
-                            text = stringResource(if (required) R.string.badge_required else R.string.badge_recommended),
-                            color = if (required) ChildooColors.CoralDeep else ChildooColors.InkSoft,
-                        )
-                    }
+                    Pill(stringResource(R.string.badge_recommended), ChildooColors.InkSoft)
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(body, style = MaterialTheme.typography.bodySmall, color = ChildooColors.InkSoft)
             }
             Spacer(Modifier.width(12.dp))
-            if (granted) {
-                Box(
-                    Modifier
-                        .size(36.dp)
-                        .background(ChildooColors.Mint, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.perm_granted), tint = Color.White, modifier = Modifier.size(22.dp))
-                }
-            } else {
-                Box(
-                    Modifier
-                        .clip(CircleShape)
-                        .background(ChildooColors.Gold)
-                        .clickable(onClick = onGrant)
-                        .padding(horizontal = 18.dp, vertical = 9.dp),
-                ) {
-                    Text(stringResource(R.string.perm_grant), style = MaterialTheme.typography.labelLarge, color = ChildooColors.Navy)
-                }
+            Box(
+                Modifier
+                    .clip(CircleShape)
+                    .background(ChildooColors.Gold)
+                    .clickable(onClick = onAction)
+                    .padding(horizontal = 18.dp, vertical = 9.dp),
+            ) {
+                Text(action, style = MaterialTheme.typography.labelLarge, color = ChildooColors.Navy)
             }
         }
-        extra()
+        footer()
     }
 }
 
-/** Shown under Usage access on Android 13+: how to lift the "restricted setting" block. */
+/** Shown under step 2 on Android 13+: how to lift the "restricted setting" block on sideloaded builds. */
 @Composable
 private fun RestrictedSettingsHelp(onOpenAppInfo: () -> Unit) {
     var open by rememberSaveable { mutableStateOf(false) }
-    Spacer(Modifier.height(12.dp))
     Column(
         Modifier
             .fillMaxWidth()
@@ -230,70 +347,63 @@ private fun NumberedStep(number: Int, text: String) {
                 .background(ChildooColors.SkyDeep, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Text(localDigits(number.toString()), style = MaterialTheme.typography.labelSmall, color = Color.White)
+            Text(number.toString(), style = MaterialTheme.typography.labelSmall, color = Color.White)
         }
         Spacer(Modifier.width(10.dp))
         Text(text, style = MaterialTheme.typography.bodySmall, color = ChildooColors.Ink, modifier = Modifier.weight(1f))
     }
 }
 
-/** MIUI / HyperOS extras. These can't be read back by apps, so the parent ticks them off. */
+/** MIUI / HyperOS extras. These can't be read back by apps, so they are plain shortcuts. */
 @Composable
-fun XiaomiChecklist(modifier: Modifier = Modifier) {
+fun XiaomiChecklist(perms: PermissionState, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    var autostartDone by rememberSaveable { mutableStateOf(false) }
-    var popupsDone by rememberSaveable { mutableStateOf(false) }
+    var autostartOpened by rememberSaveable { mutableStateOf(false) }
+    var popupsOpened by rememberSaveable { mutableStateOf(false) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        ManualStepCard(
+        OptionalCard(
             icon = Icons.Rounded.RestartAlt,
             tint = ChildooColors.Coral,
             title = stringResource(R.string.xiaomi_autostart_title),
             body = stringResource(R.string.xiaomi_autostart_body),
-            done = autostartDone,
-            onOpen = {
+            action = stringResource(R.string.open),
+            onAction = {
                 Permissions.openXiaomiAutostart(context)
-                autostartDone = true
+                autostartOpened = true
             },
+            footer = { if (autostartOpened) OpenedHint() },
         )
-        ManualStepCard(
+        OptionalCard(
             icon = Icons.Rounded.Widgets,
             tint = ChildooColors.Lilac,
             title = stringResource(R.string.xiaomi_popups_title),
             body = stringResource(R.string.xiaomi_popups_body),
-            done = popupsDone,
-            onOpen = {
+            action = stringResource(R.string.open),
+            onAction = {
                 Permissions.openXiaomiOtherPermissions(context)
-                popupsDone = true
+                popupsOpened = true
             },
+            footer = { if (popupsOpened) OpenedHint() },
         )
+        if (!perms.batteryUnrestricted) {
+            OptionalCard(
+                icon = Icons.Rounded.BatteryChargingFull,
+                tint = ChildooColors.Mint,
+                title = stringResource(R.string.perm_battery_title),
+                body = stringResource(R.string.perm_battery_body),
+                action = stringResource(R.string.open),
+                onAction = { Permissions.openBattery(context) },
+            )
+        }
     }
 }
 
 @Composable
-private fun ManualStepCard(
-    icon: ImageVector,
-    tint: Color,
-    title: String,
-    body: String,
-    done: Boolean,
-    onOpen: () -> Unit,
-) {
-    PermissionCard(
-        icon = icon,
-        tint = tint,
-        title = title,
-        body = body,
-        required = false,
-        granted = false,
-        onGrant = onOpen,
-    ) {
-        if (done) {
-            Spacer(Modifier.height(10.dp))
-            Text(
-                stringResource(R.string.xiaomi_opened_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = ChildooColors.Mint,
-            )
-        }
-    }
+private fun OpenedHint() {
+    Spacer(Modifier.height(10.dp))
+    Text(
+        stringResource(R.string.xiaomi_opened_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = ChildooColors.Mint,
+    )
 }

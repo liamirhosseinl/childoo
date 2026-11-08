@@ -5,15 +5,15 @@
 
     <!-- Onboarding -->
     <string name="ob_welcome_title">Turn screen time into brain time</string>
-    <string name="ob_welcome_body">Your child keeps playing. Every so often, Nuzo pops in with a quick, friendly challenge that unlocks the next round of play.</string>
+    <string name="ob_welcome_body">Your child keeps playing. Every so often, Nuzo pops in with a quick learning game that unlocks the next round of play.</string>
     <string name="ob_welcome_cta">Let\'s set it up</string>
 
     <string name="ob_apps_title">Which apps cost screen time?</string>
     <string name="ob_apps_body">Pick the apps where play time should be counted. Everything else stays free.</string>
     <string name="ob_apps_cta_empty">Pick at least one app</string>
     <plurals name="ob_apps_cta">
-        <item quantity="one">Continue with %1$s app</item>
-        <item quantity="other">Continue with %1$s apps</item>
+        <item quantity="one">Continue with %1$d app</item>
+        <item quantity="other">Continue with %1$d apps</item>
     </plurals>
     <string name="ob_continue">Continue</string>
 
@@ -32,9 +32,9 @@
     <string name="badge_recommended">Recommended</string>
     <string name="badge_required">Required</string>
 
-    <string name="ob_perms_title">A few quick permissions</string>
-    <string name="ob_perms_body">Childoo needs these to notice when a chosen app is open and to show the challenge on top. Nothing ever leaves this phone.</string>
-    <string name="ob_perms_cta_blocked">Allow the required ones to continue</string>
+    <string name="ob_perms_title">Two switches and you\'re done</string>
+    <string name="ob_perms_body">Android asks you to turn these on yourself. Tap the button, flip the switch, and Childoo brings you right back.</string>
+    <string name="ob_perms_cta_blocked">Finish both steps to continue</string>
 
     <string name="ob_xiaomi_title">One more step on Xiaomi</string>
     <string name="ob_xiaomi_body">Xiaomi phones close background apps aggressively. These two switches keep Childoo running reliably.</string>
@@ -44,13 +44,13 @@
     <string name="ob_ready_cta">Turn on protection</string>
     <string name="summary_apps">apps protected</string>
     <string name="summary_interval">minutes per challenge</string>
-    <string name="test_challenge">Preview a challenge</string>
+    <string name="test_challenge">Try a game now</string>
 
     <!-- Permissions -->
     <string name="perm_usage_title">Usage access</string>
-    <string name="perm_usage_body">To notice when a chosen app is open.</string>
+    <string name="perm_usage_body">So Childoo knows when a chosen app is open.</string>
     <string name="perm_overlay_title">Display over other apps</string>
-    <string name="perm_overlay_body">To show the challenge on top of the game.</string>
+    <string name="perm_overlay_body">So the learning game can appear on top.</string>
     <string name="perm_notifications_title">Notifications</string>
     <string name="perm_notifications_body">A quiet notice that protection is running.</string>
     <string name="perm_battery_title">Unrestricted battery</string>
@@ -90,4 +90,41 @@
     <string name="home_interval_title">Challenge every</string>
     <string name="home_attention">Protection needs the permissions below before it can work.</string>
     <string name="home_xiaomi_hint">Tap to check the Xiaomi switches.</string>
+
+    <!-- Child -->
+    <string name="ob_child_title">Who is this phone for?</string>
+    <string name="ob_child_body">Games and levels are picked for your child\'s age and grow with them.</string>
+    <string name="ob_child_name">Child\'s first name (optional)</string>
+    <string name="ob_child_age">Age</string>
+    <string name="ob_child_age_hint">Nuzo uses the name to cheer your child on. It never leaves this phone.</string>
+    <string name="home_child">For %1$s, age %2$d</string>
+    <string name="home_child_age">For a %1$d-year-old</string>
+
+    <!-- Guided permissions -->
+    <string name="trust_screen">Childoo only sees which app is open. Never the screen, messages or photos.</string>
+    <string name="trust_device">Nothing is uploaded. Everything stays on this phone.</string>
+    <string name="trust_pin">Only you can change or turn it off, with your PIN.</string>
+    <string name="perm_step">STEP %1$d OF 2</string>
+    <string name="perm_cta_overlay">Turn on step %1$d</string>
+    <string name="perm_cta_usage">Turn on step %1$d</string>
+    <string name="perm_cta_hint">Find Childoo in the list and switch it on. You\'ll come straight back here.</string>
+    <string name="perm_all_set">All set. Childoo can protect play time.</string>
+    <string name="open">Open</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Parent PIN -->
+    <string name="pin_create_title">Create a parent PIN</string>
+    <string name="pin_create_body">You\'ll need it to change settings or turn protection off.</string>
+    <string name="pin_confirm_title">Enter it once more</string>
+    <string name="pin_confirm_body">Just to be sure.</string>
+    <string name="pin_mismatch">Those didn\'t match. Let\'s start again.</string>
+    <string name="pin_gate_title">Grown-ups only</string>
+    <string name="pin_gate_body">Enter your parent PIN.</string>
+    <string name="pin_wrong">That PIN isn\'t right.</string>
+    <string name="pin_locked">Too many tries. Wait %1$d seconds.</string>
+    <string name="pin_forgot">Forgot PIN?</string>
+    <string name="pin_delete">Delete</string>
+    <string name="grownup_title">Quick grown-up check</string>
+    <string name="grownup_body">Answer this to set a new PIN.</string>
+    <string name="grownup_wrong">Not quite. Try again.</string>
 </resources>

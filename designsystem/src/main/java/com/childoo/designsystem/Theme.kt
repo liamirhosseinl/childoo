@@ -35,18 +35,33 @@ object ChildooColors {
     val Ink = Color(0xFF1B1D3A)
     val InkSoft = Color(0xFF5D6185)
     val Line = Color(0xFFE6E0D6)
+
+    // Character palettes, matched to the character sheets.
+    val NuzoLight = Color(0xFFD4EEFF)
+    val NuzoBlue = Color(0xFF8CC8F5)
+    val NuzoDeep = Color(0xFF5C9FE0)
+    val NuzoHorn = Color(0xFFB28CF5)
 }
 
-val Vazirmatn = FontFamily(
-    Font(R.font.vazirmatn_regular, FontWeight.Normal),
-    Font(R.font.vazirmatn_medium, FontWeight.Medium),
-    Font(R.font.vazirmatn_semibold, FontWeight.SemiBold),
-    Font(R.font.vazirmatn_bold, FontWeight.Bold),
-    Font(R.font.vazirmatn_extrabold, FontWeight.ExtraBold),
+/** Rounded display face for headings, numbers and anything a child reads. */
+val Fredoka = FontFamily(
+    Font(R.font.fredoka_medium, FontWeight.Medium),
+    Font(R.font.fredoka_semibold, FontWeight.SemiBold),
+    Font(R.font.fredoka_bold, FontWeight.Bold),
+    Font(R.font.fredoka_bold, FontWeight.ExtraBold),
 )
 
-private fun TextStyle.brand(weight: FontWeight, size: Int? = null, line: Int? = null) = copy(
-    fontFamily = Vazirmatn,
+/** Friendly, very legible body face for parent-facing text. */
+val Nunito = FontFamily(
+    Font(R.font.nunito_regular, FontWeight.Normal),
+    Font(R.font.nunito_semibold, FontWeight.Medium),
+    Font(R.font.nunito_semibold, FontWeight.SemiBold),
+    Font(R.font.nunito_bold, FontWeight.Bold),
+    Font(R.font.nunito_extrabold, FontWeight.ExtraBold),
+)
+
+private fun TextStyle.brand(weight: FontWeight, size: Int? = null, line: Int? = null, family: FontFamily = Nunito) = copy(
+    fontFamily = family,
     fontWeight = weight,
     fontSize = size?.sp ?: fontSize,
     lineHeight = line?.sp ?: lineHeight,
@@ -56,19 +71,19 @@ private fun TextStyle.brand(weight: FontWeight, size: Int? = null, line: Int? = 
 private val Base = Typography()
 
 val ChildooTypography = Typography(
-    displayLarge = Base.displayLarge.brand(FontWeight.ExtraBold),
-    displayMedium = Base.displayMedium.brand(FontWeight.ExtraBold),
-    displaySmall = Base.displaySmall.brand(FontWeight.ExtraBold, 34, 44),
-    headlineLarge = Base.headlineLarge.brand(FontWeight.ExtraBold, 30, 40),
-    headlineMedium = Base.headlineMedium.brand(FontWeight.ExtraBold, 26, 36),
-    headlineSmall = Base.headlineSmall.brand(FontWeight.Bold, 22, 32),
-    titleLarge = Base.titleLarge.brand(FontWeight.Bold, 20, 28),
-    titleMedium = Base.titleMedium.brand(FontWeight.Bold, 17, 26),
-    titleSmall = Base.titleSmall.brand(FontWeight.SemiBold, 15, 22),
+    displayLarge = Base.displayLarge.brand(FontWeight.Bold, family = Fredoka),
+    displayMedium = Base.displayMedium.brand(FontWeight.Bold, family = Fredoka),
+    displaySmall = Base.displaySmall.brand(FontWeight.Bold, 34, 42, Fredoka),
+    headlineLarge = Base.headlineLarge.brand(FontWeight.SemiBold, 30, 38, Fredoka),
+    headlineMedium = Base.headlineMedium.brand(FontWeight.SemiBold, 26, 34, Fredoka),
+    headlineSmall = Base.headlineSmall.brand(FontWeight.SemiBold, 22, 30, Fredoka),
+    titleLarge = Base.titleLarge.brand(FontWeight.SemiBold, 20, 28, Fredoka),
+    titleMedium = Base.titleMedium.brand(FontWeight.Bold, 17, 24),
+    titleSmall = Base.titleSmall.brand(FontWeight.Bold, 15, 22),
     bodyLarge = Base.bodyLarge.brand(FontWeight.Normal, 16, 26),
     bodyMedium = Base.bodyMedium.brand(FontWeight.Normal, 14, 22),
     bodySmall = Base.bodySmall.brand(FontWeight.Normal, 13, 20),
-    labelLarge = Base.labelLarge.brand(FontWeight.Bold, 15, 20),
+    labelLarge = Base.labelLarge.brand(FontWeight.SemiBold, 16, 20, Fredoka),
     labelMedium = Base.labelMedium.brand(FontWeight.SemiBold, 13, 18),
     labelSmall = Base.labelSmall.brand(FontWeight.SemiBold, 11, 16),
 )

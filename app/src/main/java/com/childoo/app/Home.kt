@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.childoo.core.ChildProfile
 import com.childoo.core.LockSettings
 import com.childoo.core.SettingsRepository
 import com.childoo.designsystem.ChildooColors
@@ -69,7 +70,6 @@ import com.childoo.designsystem.GhostButton
 import com.childoo.designsystem.IconBadge
 import com.childoo.designsystem.Nuzo
 import com.childoo.designsystem.NuzoMood
-import com.childoo.designsystem.localDigits
 import com.childoo.lockkit.LockKit
 import kotlinx.coroutines.launch
 
@@ -100,6 +100,7 @@ private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit) {
     val solved by repo.challengesSolved.collectAsStateWithLifecycle(initialValue = 0)
     val playedMs by repo.playedSinceChallengeMs.collectAsStateWithLifecycle(initialValue = 0L)
     val perms by rememberPermissionState()
+    val child by repo.child.collectAsStateWithLifecycle(initialValue = ChildProfile())
     val apps by rememberInstalledApps()
     val selectedApps = remember(apps, settings.targetPackages) {
         apps.orEmpty().filter { it.packageName in settings.targetPackages }
@@ -118,13 +119,19 @@ private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Nuzo(Modifier.width(40.dp), mood = NuzoMood.Happy)
             Spacer(Modifier.width(10.dp))
-            Text(
-                stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineSmall,
-                color = ChildooColors.Navy,
-                modifier = Modifier.weight(1f),
-            )
-            LanguageToggle()
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = ChildooColors.Navy,
+                )
+                Text(
+                    if (child.name.isBlank()) stringResource(R.string.home_child_age, child.age)
+                    else stringResource(R.string.home_child, child.name, child.age),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ChildooColors.InkSoft,
+                )
+            }
         }
 
         val protectionOn = settings.protectionEnabled && perms.readyToProtect
@@ -143,21 +150,21 @@ private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit) {
 
         if (!perms.readyToProtect) {
             AttentionCard()
-            PermissionChecklist(perms)
+            GuidedPermissions(perms)
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
                 icon = Icons.Rounded.EmojiEvents,
                 tint = ChildooColors.GoldDeep,
-                value = localDigits(solved.toString()),
+                value = solved.toString(),
                 label = stringResource(R.string.stat_solved),
                 modifier = Modifier.weight(1f),
             )
             StatCard(
                 icon = Icons.Rounded.Apps,
                 tint = ChildooColors.Sky,
-                value = localDigits(settings.targetPackages.size.toString()),
+                value = settings.targetPackages.size.toString(),
                 label = stringResource(R.string.stat_apps),
                 modifier = Modifier.weight(1f),
             )
@@ -195,7 +202,7 @@ private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit) {
         )
 
         if (Permissions.isXiaomiFamily) {
-            XiaomiSection()
+            XiaomiSection(perms)
         }
         Spacer(Modifier.height(12.dp))
     }
@@ -232,7 +239,7 @@ private fun StatusHero(
             if (enabled) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        localDigits(remaining.toString()),
+                        remaining.toString(),
                         style = MaterialTheme.typography.headlineLarge,
                         color = Color.White,
                     )
@@ -256,7 +263,7 @@ private fun StatusHero(
             Spacer(Modifier.height(4.dp))
             Text(
                 if (enabled) {
-                    stringResource(R.string.protection_on_hint, localDigits(remaining.toString()))
+                    stringResource(R.string.protection_on_hint, remaining.toString())
                 } else {
                     stringResource(R.string.protection_off_hint)
                 },
@@ -410,7 +417,7 @@ private fun IntervalSegments(selected: Int, onSelect: (Int) -> Unit) {
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    stringResource(R.string.interval_short, localDigits(minutes.toString())),
+                    stringResource(R.string.interval_short, minutes.toString()),
                     style = MaterialTheme.typography.labelLarge,
                     color = if (isSelected) Color.White else ChildooColors.InkSoft,
                 )
@@ -420,7 +427,7 @@ private fun IntervalSegments(selected: Int, onSelect: (Int) -> Unit) {
 }
 
 @Composable
-private fun XiaomiSection() {
+private fun XiaomiSection(perms: PermissionState) {
     var open by rememberSaveable { mutableStateOf(false) }
     Column(
         Modifier
@@ -440,7 +447,7 @@ private fun XiaomiSection() {
         }
         if (open) {
             Spacer(Modifier.height(14.dp))
-            XiaomiChecklist()
+            XiaomiChecklist(perms)
         }
     }
 }

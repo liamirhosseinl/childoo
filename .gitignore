@@ -13,3 +13,6 @@
 *.jks
 *.keystore
 keystore.properties
+
+# Web games
+games/node_modules/
