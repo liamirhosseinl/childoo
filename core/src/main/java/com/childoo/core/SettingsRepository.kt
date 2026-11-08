@@ -37,6 +37,7 @@ class SettingsRepository(context: Context) {
         val ENABLED = booleanPreferencesKey("protection_enabled")
         val PLAYED_MS = longPreferencesKey("played_since_challenge_ms")
         val CHALLENGES_SOLVED = intPreferencesKey("challenges_solved_total")
+        val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
     }
 
     val settings: Flow<LockSettings> = store.data.map { p ->
@@ -51,6 +52,13 @@ class SettingsRepository(context: Context) {
     val playedSinceChallengeMs: Flow<Long> = store.data.map { it[Keys.PLAYED_MS] ?: 0L }
 
     val challengesSolved: Flow<Int> = store.data.map { it[Keys.CHALLENGES_SOLVED] ?: 0 }
+
+    /** Whether the parent finished the first-run setup. */
+    val onboardingDone: Flow<Boolean> = store.data.map { it[Keys.ONBOARDING_DONE] ?: false }
+
+    suspend fun setOnboardingDone(done: Boolean) {
+        store.edit { it[Keys.ONBOARDING_DONE] = done }
+    }
 
     suspend fun setTargets(packages: Set<String>) {
         store.edit { it[Keys.TARGETS] = packages }

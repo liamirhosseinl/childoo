@@ -1,36 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">چایلدو</string>
-    <string name="challenges_solved">چالش‌های حل‌شده: %1$d</string>
+    <string name="back">بازگشت</string>
 
-    <string name="protection_on">محافظت روشنه</string>
-    <string name="protection_off">محافظت خاموشه</string>
-    <string name="protection_on_hint">زمان بازی توی اپ‌های انتخاب‌شده شمرده می‌شه.</string>
-    <string name="protection_off_hint">روشنش کن تا شمارش زمان بازی شروع بشه.</string>
-    <string name="protection_needs_permissions">اول دسترسی استفاده و نمایش روی برنامه‌ها رو بده.</string>
-    <string name="protection_needs_apps">حداقل یه اپ از پایین انتخاب کن.</string>
+    <!-- Onboarding -->
+    <string name="ob_welcome_title">زمان صفحه رو به زمان یادگیری تبدیل کن</string>
+    <string name="ob_welcome_body">بچه‌ات به بازی‌اش ادامه می‌ده. هر چند وقت یک بار، نوزو با یه چالش کوتاه و دوستانه سر می‌زنه و دور بعدی بازی رو باز می‌کنه.</string>
+    <string name="ob_welcome_cta">بزن بریم</string>
 
-    <string name="section_permissions">دسترسی‌ها</string>
+    <string name="ob_apps_title">کدوم اپ‌ها زمان صفحه حساب می‌شن؟</string>
+    <string name="ob_apps_body">اپ‌هایی رو انتخاب کن که زمان بازی توشون شمرده بشه. بقیه آزادن.</string>
+    <string name="ob_apps_cta_empty">حداقل یک اپ انتخاب کن</string>
+    <plurals name="ob_apps_cta">
+        <item quantity="one">ادامه با %1$s اپ</item>
+        <item quantity="other">ادامه با %1$s اپ</item>
+    </plurals>
+    <string name="ob_continue">ادامه</string>
+
+    <string name="ob_interval_title">نوزو هر چند وقت سر بزنه؟</string>
+    <string name="ob_interval_body">بعد از این مقدار بازی توی اپ‌های انتخاب‌شده، یه چالش ۶۰ ثانیه‌ای ظاهر می‌شه.</string>
+    <string name="interval_30_label">متعادل</string>
+    <string name="interval_30_note">هر نیم ساعت بازی، یک چالش.</string>
+    <string name="interval_15_label">تمرین بیشتر</string>
+    <string name="interval_15_note">دو برابر چالش برای بچه‌هایی که زیاد بازی می‌کنن.</string>
+    <string name="interval_5_label">فشرده</string>
+    <string name="interval_5_note">برای جلسه‌های کوتاه یا جبران عقب‌ماندگی.</string>
+    <string name="interval_1_label">امتحانی</string>
+    <string name="interval_1_note">همین الان ببین چطور کار می‌کنه، بعد برگردون.</string>
+    <string name="unit_min">دقیقه</string>
+    <string name="interval_short">%1$s دقیقه</string>
+    <string name="badge_recommended">پیشنهادی</string>
+    <string name="badge_required">ضروری</string>
+
+    <string name="ob_perms_title">چند تا دسترسی کوتاه</string>
+    <string name="ob_perms_body">چایلدو این‌ها رو لازم داره تا بفهمه کِی یه اپ انتخاب‌شده بازه و چالش رو روش نشون بده. هیچ اطلاعاتی از این گوشی خارج نمی‌شه.</string>
+    <string name="ob_perms_cta_blocked">برای ادامه، موارد ضروری رو فعال کن</string>
+
+    <string name="ob_xiaomi_title">یه قدم دیگه برای شیائومی</string>
+    <string name="ob_xiaomi_body">گوشی‌های شیائومی اپ‌های پس‌زمینه رو خیلی سریع می‌بندن. این دو تا کلید باعث می‌شن چایلدو همیشه کار کنه.</string>
+
+    <string name="ob_ready_title">همه‌چی آماده‌ست!</string>
+    <string name="ob_ready_body">محافظت رو روشن کن و گوشی رو بده دست بچه. از این‌جا به بعد با نوزو.</string>
+    <string name="ob_ready_cta">روشن کردن محافظت</string>
+    <string name="summary_apps">اپ محافظت‌شده</string>
+    <string name="summary_interval">دقیقه برای هر چالش</string>
+    <string name="test_challenge">پیش‌نمایش یه چالش</string>
+
+    <!-- Permissions -->
     <string name="perm_usage_title">دسترسی به آمار استفاده</string>
-    <string name="perm_usage_body">برای اینکه بفهمیم اپ‌های انتخاب‌شده کِی بازن.</string>
+    <string name="perm_usage_body">برای اینکه بفهمیم کِی یه اپ انتخاب‌شده بازه.</string>
     <string name="perm_overlay_title">نمایش روی برنامه‌های دیگر</string>
-    <string name="perm_overlay_body">برای اینکه چالش روی بازی ظاهر بشه.</string>
+    <string name="perm_overlay_body">برای اینکه چالش روی بازی نشون داده بشه.</string>
     <string name="perm_notifications_title">اعلان‌ها</string>
-    <string name="perm_notifications_body">نشون می‌ده که محافظت در حال اجراست.</string>
-    <string name="perm_battery_title">بدون محدودیت باتری</string>
-    <string name="perm_battery_body">تا گوشی محافظت رو توی پس‌زمینه نبنده.</string>
+    <string name="perm_notifications_body">یه اعلان آروم که نشون می‌ده محافظت روشنه.</string>
+    <string name="perm_battery_title">باتری بدون محدودیت</string>
+    <string name="perm_battery_body">تا گوشی هیچ‌وقت محافظت رو متوقف نکنه.</string>
     <string name="perm_grant">اجازه</string>
-    <string name="perm_granted">انجام شد</string>
+    <string name="perm_granted">فعال شد</string>
 
-    <string name="xiaomi_title">شیائومی / ردمی / پوکو</string>
-    <string name="xiaomi_body">روی این گوشی دو تا کلید دیگه هم لازمه: «شروع خودکار» رو روشن کن، و توی «سایر مجوزها» گزینه‌ی «نمایش پنجره‌های بازشو هنگام اجرا در پس‌زمینه» رو مجاز کن.</string>
-    <string name="xiaomi_autostart">شروع خودکار</string>
-    <string name="xiaomi_popups">سایر مجوزها</string>
+    <string name="restricted_title">پیغام «App was denied access» می‌بینی؟</string>
+    <string name="restricted_body">اندروید برای اپ‌هایی که خارج از فروشگاه نصب شدن یه قفل اضافه می‌ذاره. برداشتنش ده ثانیه طول می‌کشه:</string>
+    <string name="restricted_step1">پایین روی «باز کردن اطلاعات برنامه» بزن.</string>
+    <string name="restricted_step2">گوشه‌ی بالا روی ⋮ بزن، گزینه‌ی Allow restricted settings رو انتخاب و تأیید کن.</string>
+    <string name="restricted_step3">برگرد این‌جا و دوباره روی «اجازه» در بخش آمار استفاده بزن.</string>
+    <string name="restricted_open_app_info">باز کردن اطلاعات برنامه</string>
 
-    <string name="section_interval">چالش هر</string>
-    <string name="interval_minutes">%1$d دقیقه</string>
-    <string name="test_challenge">همین الان یه چالش نشون بده (تست)</string>
+    <string name="xiaomi_autostart_title">شروع خودکار</string>
+    <string name="xiaomi_autostart_body">تا محافظت بعد از خاموش و روشن شدن گوشی دوباره شروع بشه.</string>
+    <string name="xiaomi_popups_title">پنجره‌های بازشو</string>
+    <string name="xiaomi_popups_body">توی «سایر مجوزها»، گزینه‌ی «نمایش پنجره‌های بازشو هنگام اجرا در پس‌زمینه» رو مجاز کن.</string>
+    <string name="xiaomi_opened_hint">باز شد. اون‌جا روشنش کن و برگرد.</string>
 
-    <string name="section_apps">اپ‌هایی که زمان صفحه حساب می‌شن (%1$d تا انتخاب شده)</string>
-    <string name="app_suggested">محبوب بین بچه‌ها</string>
+    <!-- App picker -->
+    <string name="apps_search">جستجوی اپ‌ها</string>
+    <string name="apps_popular">محبوب بین بچه‌ها</string>
+    <string name="apps_all">همه‌ی اپ‌ها</string>
+    <string name="apps_none">اپی با این اسم پیدا نشد.</string>
+
+    <!-- Home -->
+    <string name="protection_on">محافظت روشنه</string>
+    <string name="protection_off">محافظت متوقفه</string>
+    <string name="protection_on_hint">چالش بعدی تقریباً بعد از %1$s دقیقه بازی.</string>
+    <string name="protection_off_hint">روشنش کن تا شمارش زمان بازی شروع بشه.</string>
+    <string name="stat_solved">چالش حل‌شده</string>
+    <string name="stat_apps">اپ محافظت‌شده</string>
+    <string name="home_apps_title">اپ‌های محافظت‌شده</string>
+    <string name="home_apps_edit">ویرایش</string>
+    <string name="home_apps_empty">هنوز اپی انتخاب نشده.</string>
+    <string name="home_interval_title">چالش هر</string>
+    <string name="home_attention">محافظت برای کار کردن به دسترسی‌های زیر نیاز داره.</string>
+    <string name="home_xiaomi_hint">برای بررسی کلیدهای شیائومی بزن.</string>
 </resources>

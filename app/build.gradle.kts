@@ -46,6 +46,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":lockkit"))
     implementation(project(":challenge"))
+    implementation(project(":designsystem"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

@@ -40,7 +40,9 @@ The parent picks the apps that cost screen time — YouTube, TikTok, Roblox, any
 - **Challenge overlay.** A full-screen challenge appears over the target app as soon as the interval is used up. The Back button cannot dismiss it.
 - **Fair by design.** If the child leaves the app, the challenge steps aside. It returns, unsolved, the moment they come back.
 - **Survives restarts.** Protection resumes automatically after a reboot or an app update. Play time is persisted, so force-closing does not reset it.
-- **Guided setup.** A single parent screen walks through every permission, with dedicated shortcuts for Xiaomi, Redmi and POCO devices.
+- **Guided onboarding.** One decision per screen: apps, interval, permissions, done — with dedicated steps for Xiaomi, Redmi and POCO devices.
+- **Parent dashboard.** Live countdown to the next challenge, challenges solved, protected apps and interval at a glance.
+- **Bilingual.** English and Persian with an in-app switch, right-to-left layout and Persian numerals.
 - **Instant test mode.** Trigger a challenge on demand to verify the setup in seconds.
 
 **On the roadmap**
@@ -57,17 +59,20 @@ Childoo is a multi-module Android project. Each module has one responsibility an
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ :app        Parent setup UI · permissions · app picker   │
-└──────────────┬───────────────────────────┬───────────────┘
-               │                           │
-┌──────────────▼──────────────┐ ┌──────────▼───────────────┐
-│ :lockkit                    │ │ :challenge               │
-│ Foreground-app detection    │─▶ Challenge UI (Compose)   │
-│ Monitor service · overlay   │ │ Question generation      │
-│ Boot / update restore       │ └──────────────────────────┘
-└──────────────┬──────────────┘
-               │
-┌──────────────▼──────────────────────────────────────────┐
+│ :app        Onboarding · parent dashboard · app picker   │
+└───────┬──────────────────────┬──────────────────┬────────┘
+        │                      │                  │
+┌───────▼─────────────┐ ┌──────▼─────────────┐    │
+│ :lockkit            │ │ :challenge         │    │
+│ App detection       │─▶ Challenge UI       │    │
+│ Monitor service     │ │ Question engine    │    │
+│ Overlay · restore   │ └──────┬─────────────┘    │
+└───────┬─────────────┘        │                  │
+        │               ┌──────▼──────────────────▼──────┐
+        │               │ :designsystem                  │
+        │               │ Theme · type · Nuzo · widgets  │
+        │               └────────────────────────────────┘
+┌───────▼─────────────────────────────────────────────────┐
 │ :core       Settings (DataStore) · play-time rules       │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -75,9 +80,10 @@ Childoo is a multi-module Android project. Each module has one responsibility an
 | Module | Responsibility | Key types |
 |---|---|---|
 | `core` | Persisted parent settings and the pure play-time logic | `SettingsRepository`, `LockSettings`, `PlayTimeAccumulator` |
+| `designsystem` | Brand theme, typography, the Nuzo character and shared components | `ChildooTheme`, `Nuzo`, `StarrySky`, `ChunkyButton` |
 | `challenge` | The challenge experience the child sees | `ChallengeScreen`, `MathQuestion` |
 | `lockkit` | Everything that enforces the rule at runtime | `UsageMonitorService`, `ForegroundAppDetector`, `OverlayController`, `LockKit` |
-| `app` | The parent-facing setup flow | `MainActivity`, `SetupScreen`, `Permissions` |
+| `app` | Parent onboarding, dashboard and settings | `OnboardingFlow`, `HomeScreen`, `AppPicker`, `Permissions` |
 
 ### How enforcement works
 
@@ -93,6 +99,7 @@ Childoo is a multi-module Android project. Each module has one responsibility an
 |---|---|
 | Language | Kotlin 2.2 |
 | UI | Jetpack Compose · Material 3 |
+| Typography | Vazirmatn (Latin + Persian), bundled |
 | Persistence | Jetpack DataStore (Preferences) |
 | Concurrency | Kotlin Coroutines & Flow |
 | Build | Gradle 8.13 · Android Gradle Plugin 8.11 · version catalog |
@@ -135,6 +142,8 @@ Childoo needs a few system permissions to do its job. The setup screen links str
 | Notifications | To show that protection is running |
 | Unrestricted battery | So the system does not stop protection in the background |
 
+**Sideloaded builds on Android 13+.** When the APK is installed outside an app store, Android blocks *Usage access* with an "App was denied access" message. Open *App info* → **⋮** → **Allow restricted settings**, then grant Usage access again. The app explains this inline. Store installs are not affected.
+
 **Xiaomi / Redmi / POCO (MIUI & HyperOS)** need two extra switches, also linked from the setup screen:
 
 - **Autostart** → on
@@ -142,9 +151,9 @@ Childoo needs a few system permissions to do its job. The setup screen links str
 
 ### Quick test
 
-1. Grant all permissions on the setup screen.
-2. Tap **Show a challenge now** to confirm the overlay appears.
-3. Select YouTube, set the interval to **1 min**, and switch protection on.
+1. Complete onboarding: pick YouTube, choose **Try it out (1 min)**, grant the permissions.
+2. Tap **Preview a challenge** to confirm the overlay appears.
+3. Turn protection on.
 4. Open YouTube and watch for a minute — the challenge appears.
 
 ## Privacy
@@ -156,6 +165,10 @@ Childoo is built for children, so privacy is the default rather than a setting.
 - The app requests only launcher-visible apps (`<queries>`) instead of the full package list.
 - No analytics, advertising or third-party SDKs are included.
 
+## Third-party assets
+
+- [Vazirmatn](https://github.com/rastikerdar/vazirmatn) font, SIL Open Font License 1.1 — see `docs/licenses/Vazirmatn-OFL.txt`.
+
 ## Project structure
 
 ```
@@ -163,6 +176,7 @@ childoo/
 ├── app/                 Parent setup app
 ├── lockkit/             Runtime enforcement
 ├── challenge/           Challenge UI and content
+├── designsystem/        Theme, typography and characters
 ├── core/                Settings and shared logic
 ├── gradle/              Version catalog and wrapper
 └── .github/workflows/   CI pipeline

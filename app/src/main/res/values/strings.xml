@@ -1,36 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Childoo</string>
-    <string name="challenges_solved">Challenges solved: %1$d</string>
+    <string name="back">Back</string>
 
-    <string name="protection_on">Protection is on</string>
-    <string name="protection_off">Protection is off</string>
-    <string name="protection_on_hint">Play time in the chosen apps is being counted.</string>
-    <string name="protection_off_hint">Switch on to start counting play time.</string>
-    <string name="protection_needs_permissions">Grant usage access and overlay first.</string>
-    <string name="protection_needs_apps">Pick at least one app below.</string>
+    <!-- Onboarding -->
+    <string name="ob_welcome_title">Turn screen time into brain time</string>
+    <string name="ob_welcome_body">Your child keeps playing. Every so often, Nuzo pops in with a quick, friendly challenge that unlocks the next round of play.</string>
+    <string name="ob_welcome_cta">Let\'s set it up</string>
 
-    <string name="section_permissions">Permissions</string>
+    <string name="ob_apps_title">Which apps cost screen time?</string>
+    <string name="ob_apps_body">Pick the apps where play time should be counted. Everything else stays free.</string>
+    <string name="ob_apps_cta_empty">Pick at least one app</string>
+    <plurals name="ob_apps_cta">
+        <item quantity="one">Continue with %1$s app</item>
+        <item quantity="other">Continue with %1$s apps</item>
+    </plurals>
+    <string name="ob_continue">Continue</string>
+
+    <string name="ob_interval_title">How often should Nuzo drop by?</string>
+    <string name="ob_interval_body">After this much play in the chosen apps, a 60-second challenge appears.</string>
+    <string name="interval_30_label">Balanced</string>
+    <string name="interval_30_note">One challenge per half hour of play.</string>
+    <string name="interval_15_label">Extra practice</string>
+    <string name="interval_15_note">Twice as many challenges for heavy players.</string>
+    <string name="interval_5_label">Intensive</string>
+    <string name="interval_5_note">For short sessions or catching up.</string>
+    <string name="interval_1_label">Try it out</string>
+    <string name="interval_1_note">See it in action right away, then switch back.</string>
+    <string name="unit_min">min</string>
+    <string name="interval_short">%1$s min</string>
+    <string name="badge_recommended">Recommended</string>
+    <string name="badge_required">Required</string>
+
+    <string name="ob_perms_title">A few quick permissions</string>
+    <string name="ob_perms_body">Childoo needs these to notice when a chosen app is open and to show the challenge on top. Nothing ever leaves this phone.</string>
+    <string name="ob_perms_cta_blocked">Allow the required ones to continue</string>
+
+    <string name="ob_xiaomi_title">One more step on Xiaomi</string>
+    <string name="ob_xiaomi_body">Xiaomi phones close background apps aggressively. These two switches keep Childoo running reliably.</string>
+
+    <string name="ob_ready_title">You\'re all set!</string>
+    <string name="ob_ready_body">Turn on protection and hand the phone back. Nuzo takes it from here.</string>
+    <string name="ob_ready_cta">Turn on protection</string>
+    <string name="summary_apps">apps protected</string>
+    <string name="summary_interval">minutes per challenge</string>
+    <string name="test_challenge">Preview a challenge</string>
+
+    <!-- Permissions -->
     <string name="perm_usage_title">Usage access</string>
-    <string name="perm_usage_body">To know when the chosen apps are open.</string>
+    <string name="perm_usage_body">To notice when a chosen app is open.</string>
     <string name="perm_overlay_title">Display over other apps</string>
     <string name="perm_overlay_body">To show the challenge on top of the game.</string>
     <string name="perm_notifications_title">Notifications</string>
-    <string name="perm_notifications_body">Shows that protection is running.</string>
-    <string name="perm_battery_title">No battery limits</string>
-    <string name="perm_battery_body">So the phone does not stop protection in the background.</string>
+    <string name="perm_notifications_body">A quiet notice that protection is running.</string>
+    <string name="perm_battery_title">Unrestricted battery</string>
+    <string name="perm_battery_body">So the phone never pauses protection.</string>
     <string name="perm_grant">Allow</string>
-    <string name="perm_granted">Done</string>
+    <string name="perm_granted">Allowed</string>
 
-    <string name="xiaomi_title">Xiaomi / Redmi / POCO</string>
-    <string name="xiaomi_body">On this phone two more switches are needed: turn on Autostart, and in Other permissions allow \"Display pop-up windows while running in the background\".</string>
-    <string name="xiaomi_autostart">Autostart</string>
-    <string name="xiaomi_popups">Other permissions</string>
+    <string name="restricted_title">Seeing \"App was denied access\"?</string>
+    <string name="restricted_body">Android adds an extra lock for apps installed outside an app store. Lifting it takes ten seconds:</string>
+    <string name="restricted_step1">Tap Open app info below.</string>
+    <string name="restricted_step2">Tap ⋮ in the top corner, choose Allow restricted settings and confirm.</string>
+    <string name="restricted_step3">Come back here and tap Allow on Usage access again.</string>
+    <string name="restricted_open_app_info">Open app info</string>
 
-    <string name="section_interval">Challenge every</string>
-    <string name="interval_minutes">%1$d min</string>
-    <string name="test_challenge">Show a challenge now (test)</string>
+    <string name="xiaomi_autostart_title">Autostart</string>
+    <string name="xiaomi_autostart_body">Lets protection restart after the phone reboots.</string>
+    <string name="xiaomi_popups_title">Pop-up windows</string>
+    <string name="xiaomi_popups_body">In Other permissions, allow \"Display pop-up windows while running in the background\".</string>
+    <string name="xiaomi_opened_hint">Opened. Switch it on there, then come back.</string>
 
-    <string name="section_apps">Apps that cost screen time (%1$d chosen)</string>
-    <string name="app_suggested">Popular with kids</string>
+    <!-- App picker -->
+    <string name="apps_search">Search apps</string>
+    <string name="apps_popular">Popular with kids</string>
+    <string name="apps_all">All apps</string>
+    <string name="apps_none">No apps match your search.</string>
+
+    <!-- Home -->
+    <string name="protection_on">Protection is on</string>
+    <string name="protection_off">Protection is paused</string>
+    <string name="protection_on_hint">Next challenge in about %1$s minutes of play.</string>
+    <string name="protection_off_hint">Switch on to start counting play time.</string>
+    <string name="stat_solved">Challenges solved</string>
+    <string name="stat_apps">Apps protected</string>
+    <string name="home_apps_title">Protected apps</string>
+    <string name="home_apps_edit">Edit</string>
+    <string name="home_apps_empty">No apps chosen yet.</string>
+    <string name="home_interval_title">Challenge every</string>
+    <string name="home_attention">Protection needs the permissions below before it can work.</string>
+    <string name="home_xiaomi_hint">Tap to check the Xiaomi switches.</string>
 </resources>

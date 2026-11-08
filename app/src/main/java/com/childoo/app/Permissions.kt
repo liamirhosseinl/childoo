@@ -103,6 +103,16 @@ object Permissions {
         appDetails(context),
     )
 
+    /** App info screen; on Android 13+ its ⋮ menu holds "Allow restricted settings". */
+    fun openAppDetails(context: Context) = open(context, appDetails(context))
+
+    /**
+     * Android 13+ blocks Usage access for apps installed outside an app store until the user
+     * allows "restricted settings" from App info. Store installs never see this.
+     */
+    val mayHitRestrictedSettings: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+
     private fun appDetails(context: Context) =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri(context))
 
