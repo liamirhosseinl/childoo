@@ -448,7 +448,47 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 }
 
 /* ============ Clips (animated WebP characters) ============ */
-.mascot.clip .clip-img { display: block; width: 100%; height: auto; }
+/* The stage box fits the standing pose; the clip canvas is taller so jumps rise above the box. */
+.mascot.clip { position: relative; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.clip-stage { position: relative; width: 100%; aspect-ratio: var(--clip-box, 1 / 1); container-type: inline-size; }
+.clip-stage::before {
+  content: ''; position: absolute; left: 18%; right: 18%; bottom: 1%; height: 7%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(10,12,50,.35), transparent); pointer-events: none;
+}
+.mascot.clip[data-clip='celebrate']::before { animation: none; }
+.clip-img {
+  position: absolute; left: 0; bottom: 0; width: 100%; height: calc(100% * var(--clip-over, 1));
+  object-fit: contain; object-position: bottom center; opacity: 0; transition: opacity .2s linear;
+  pointer-events: none; user-select: none;
+}
+.clip-img.on { opacity: 1; }
+.clip-acc { position: absolute; left: 0; bottom: 0; width: 100%; height: calc(100% * var(--clip-over, 1)); pointer-events: none; }
+.clip-acc .acc {
+  position: absolute; line-height: 1;
+  left: calc(var(--hx, .5) * 100% + var(--dx) * var(--hs, .4) * 100cqw);
+  top: calc(var(--hy, .2) * 100% + var(--dy) * var(--hs, .4) * 100cqw);
+  font-size: calc(var(--size) * var(--hs, .4) * 100cqw);
+  transform: translate(-50%, -50%) rotate(var(--rot));
+}
+.clip-acc .acc-back { z-index: -1; }
+/* Thinking: a small thought bubble over the resting pose. */
+.mascot.clip[data-mood='thinking']::after {
+  content: ''; position: absolute; right: 2%; top: -6%; width: 24%; aspect-ratio: 1; border-radius: 50%;
+  background: rgba(255,255,255,.92) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='6' cy='12' r='2.2' fill='%235d6185'/%3E%3Ccircle cx='12' cy='12' r='2.2' fill='%235d6185'/%3E%3Ccircle cx='18' cy='12' r='2.2' fill='%235d6185'/%3E%3C/svg%3E") center / 70% no-repeat;
+  box-shadow: -8px 12px 0 -6px rgba(255,255,255,.85); animation: think-dots 1.6s ease-in-out infinite;
+}
+@keyframes think-dots { 50% { transform: translateY(-4px) scale(1.04); } }
+
+/* Portraits (stills) and buddies that are still on the way. */
+.portrait img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: contain; }
+.buddy-card.soon, .shelf-card.soon { position: relative; }
+.soon .portrait img { filter: grayscale(.85) brightness(.75); opacity: .75; }
+.soon span { color: var(--gold) !important; opacity: 1 !important; font-weight: 800 !important; }
+.lock {
+  position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--navy, #1b1f5e) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23FFC145' d='M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 0 1 6 0v3z'/%3E%3C/svg%3E") center / 60% no-repeat;
+  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+}
 
 /* ============ Buddy picker ============ */
 .picker {

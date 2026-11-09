@@ -70,8 +70,8 @@ import com.childoo.designsystem.ChildooColors
 import com.childoo.designsystem.ChunkyButton
 import com.childoo.designsystem.GhostButton
 import com.childoo.designsystem.IconBadge
-import com.childoo.designsystem.Nuzo
-import com.childoo.designsystem.NuzoMood
+import com.childoo.designsystem.Buddy
+import com.childoo.designsystem.BuddyClip
 import com.childoo.designsystem.Pill
 import com.childoo.designsystem.StarrySky
 import com.childoo.lockkit.LockKit
@@ -314,11 +314,11 @@ private fun WelcomeStep() {
                 .clip(RoundedCornerShape(36.dp)),
         ) {
             StarrySky {
-                Nuzo(
+                Buddy(
                     Modifier
                         .align(Alignment.Center)
-                        .width(170.dp),
-                    mood = NuzoMood.Happy,
+                        .width(190.dp),
+                    clip = BuddyClip.Hello,
                 )
                 Text(
                     stringResource(R.string.app_name),
@@ -425,7 +425,7 @@ private fun ReadyStep(appCount: Int, interval: Int, canTest: Boolean, onTest: ()
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.height(24.dp))
-            Nuzo(Modifier.width(170.dp), mood = NuzoMood.Cheer)
+            Buddy(Modifier.width(180.dp), clip = BuddyClip.Celebrate)
             Spacer(Modifier.height(20.dp))
             Text(
                 stringResource(R.string.ob_ready_title),

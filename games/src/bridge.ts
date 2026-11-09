@@ -56,7 +56,7 @@ function browserHost(): Host {
     companion: (['nuzo', 'lotli', 'embrix'] as const).find((w) => w === params.get('buddy')),
     streakDays: num('streak'),
     wallet: params.has('coins')
-      ? { coins: num('coins') ?? 0, xp: num('xp') ?? num('coins') ?? 0, owned: (params.get('owned') ?? '').split(',').filter(Boolean), equipped: {} }
+      ? { coins: num('coins') ?? 0, xp: num('xp') ?? num('coins') ?? 0, owned: (params.get('owned') ?? '').split(',').filter(Boolean), equipped: Object.fromEntries((params.get('wear') ?? '').split(',').filter((x) => x.includes(':')).map((x) => x.split(':'))) }
       : undefined,
   };
   const synth = typeof speechSynthesis !== 'undefined' ? speechSynthesis : undefined;

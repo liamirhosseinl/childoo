@@ -1,4 +1,4 @@
-import { CHARACTER_NAMES, createMascot, setMood } from '../characters/mascots';
+import { createMascot, setMood } from '../characters/mascots';
 import type { Wallet } from '../engine/economy';
 import type { World } from '../engine/types';
 
@@ -103,6 +103,7 @@ export function pickIsland(
     const list = layer.querySelector('.island-list') as HTMLElement;
     const buddy = createMascot(companion, wallet.equipped);
     (layer.querySelector('.islands-buddy') as HTMLElement).appendChild(buddy);
+    window.setTimeout(() => setMood(buddy, 'hello'), 250);
 
     islands.forEach((info, i) => {
       const card = document.createElement('button');
@@ -116,14 +117,14 @@ export function pickIsland(
           <span class="island-tag">${ISLAND_TAGS[info.world]}</span>
           <div class="island-meta">
             <span class="lv">Level ${info.level}</span>
-            <span class="host">with ${CHARACTER_NAMES[info.world]}</span>
+            <span class="host">${info.games} games</span>
           </div>
           <div class="island-bar"><i style="width:${Math.round(info.progress * 100)}%"></i></div>
         </div>`;
       card.addEventListener('click', () => {
         onTap();
         card.classList.add('picked');
-        setMood(buddy, 'cheer');
+        setMood(buddy, 'walk');
         list.querySelectorAll('.island').forEach((c) => c !== card && c.classList.add('faded'));
         window.setTimeout(() => {
           layer.classList.add('leaving');
@@ -131,7 +132,7 @@ export function pickIsland(
             layer.remove();
             resolve(info.world);
           }, 300);
-        }, 550);
+        }, 900);
       });
       list.appendChild(card);
     });

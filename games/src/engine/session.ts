@@ -1,4 +1,5 @@
 import type { Host } from '../bridge';
+import { activeBuddy } from '../characters/mascots';
 import type { Stage } from '../ui/stage';
 import { applyEarnings, earn, levelFromXp, normalizeWallet } from './economy';
 import { createRng, type Rng } from './rng';
@@ -34,16 +35,14 @@ export async function runSession(game: Game, config: HostConfig, deps: SessionDe
   stage.setVoice(config.voice !== false);
 
   const wallet = normalizeWallet(config.wallet);
-  let companion: World | null = config.companion ?? null;
-  let pickedNow = false;
+  let companion: World | null = config.companion ? activeBuddy(config.companion) : null;
   if (!companion) {
-    stage.setWorld(game.world, game.title);
+    stage.setWorld(game.world, game.title, activeBuddy(null));
     companion = await stage.pickBuddy(speak, () => sound.play('pop'));
-    pickedNow = true;
     sound.play('correct');
   }
 
-  stage.setWorld(game.world, game.title);
+  stage.setWorld(game.world, game.title, companion, wallet.equipped);
   const records: RoundRecord[] = [];
   let total = game.rounds;
   let extra = 0;
@@ -165,7 +164,7 @@ export async function runSession(game: Game, config: HostConfig, deps: SessionDe
     guessing,
     durationMs: Math.round(performance.now() - started),
     coinsEarned: earnings.total,
-    companion: pickedNow ? companion : config.companion ?? companion,
+    companion,
     wallet: newWallet,
   };
 

@@ -39,7 +39,8 @@ The parent picks the apps that cost screen time — YouTube, TikTok, Roblox, any
 - **18 learning games on three islands.** Number Planet (counting, number bonds, balance, number line, fair sharing, patterns, and the arcade games Space Hockey and Number Snake), Word Lagoon (first sounds, spelling, rhyme, categories, sight words, Word Snake) and Courage Mountain (calm breathing, movement, memory, Penalty Kick). Every game explains *why* after a correct answer.
 - **The child chooses.** When play time is up, the child picks an island. Each island shows its level and progress, and the choices build an interests chart for the parent.
 - **Adaptive and fair.** Levels follow each child's results per game; random tapping is detected and answered with one more round, never with punishment. Each game levels up on its own as the child improves.
-- **Buddy, coins and rewards.** The child picks a buddy (Nuzo, Lotli or Embrix) on the first challenge. Every finished game pays coins, with a bonus for first-try answers and daily streaks; coins level the buddy up.
+- **An animated buddy.** Lotli, the axolotl, plays along in every game: waving hello, cheering right answers, comforting after a miss and celebrating level-ups, all with fully animated character clips. Nuzo and Embrix are coming soon.
+- **Coins and rewards.** The child meets the buddy on the first challenge. Every finished game pays coins, with a bonus for first-try answers and daily streaks; coins level the buddy up.
 - **Kid's Corner.** The child's own space, open without the PIN: see the buddy, spend coins on hats, glasses and backpacks, and dress up. Purchases never cost real money.
 - **Gentle sound and full screen.** Soft effects and quiet generated music per world, each switchable by the parent; challenges and the app run full screen. (Read-aloud returns with recorded voices per language.)
 - **App-aware play timer.** Counts only the time spent in the apps the parent chose, and only while the screen is on.
@@ -55,7 +56,7 @@ The parent picks the apps that cost screen time — YouTube, TikTok, Roblox, any
 
 **On the roadmap**
 
-- Fully animated characters (the engine already swaps in animated clips from `games/public/characters/` when they exist; see `games/scripts/make-clip.sh`)
+- Nuzo and Embrix animation sets (same pipeline as Lotli: `games/scripts/character-clips.py` with a spec in `games/scripts/clips/`)
 - Parent PIN gate, tamper alerts and weekly progress reports
 - Subscription plans and a parent web dashboard
 - iOS app (Screen Time API)
@@ -72,12 +73,12 @@ Childoo is a multi-module Android project. Each module has one responsibility an
 ┌──────▼──────────────┐   ┌───────────────────┐   ┌───▼──────────────┐
 │ :lockkit            │──▶│ :gamehost         │   │ :designsystem    │
 │ App detection       │   │ WebView · bridge  │   │ Theme · fonts    │
-│ Monitor service     │   │ Voice · haptics   │   │ Nuzo · widgets   │
+│ Monitor service     │   │ Voice · haptics   │   │ Buddy · widgets  │
 │ Overlay · watchdog  │   └────────┬──────────┘   └──────────────────┘
 └──────┬──────────────┘            │ assets/games (built from games/)
        │                  ┌────────▼──────────┐
        │                  │ games/ (TypeScript)│
-       │                  │ Engine · 14 games │
+       │                  │ Engine · 18 games │
        │                  └───────────────────┘
 ┌──────▼──────────────────────────────────────────────────────┐
 │ :core       Settings (DataStore) · play-time rules · PIN      │
@@ -87,9 +88,9 @@ Childoo is a multi-module Android project. Each module has one responsibility an
 | Module | Responsibility | Key types |
 |---|---|---|
 | `core` | Persisted parent settings and the pure play-time logic | `SettingsRepository`, `LockSettings`, `PlayTimeAccumulator` |
-| `designsystem` | Brand theme, typography, the Nuzo character and shared components | `ChildooTheme`, `Nuzo`, `StarrySky`, `ChunkyButton` |
+| `designsystem` | Brand theme, typography, the animated buddy and shared components | `ChildooTheme`, `Buddy`, `StarrySky`, `ChunkyButton` |
 | `gamehost` | Runs the web game engine offline in a WebView, with voice and haptics | `GameView`, `GameBridge`, `GameConfig`, `GameResult` |
-| `games/` | The game engine and all games (TypeScript, no framework) | `runSession`, `pickGame`, `Stage`, `GAMES` |
+| `games/` | The game engine, all games and the character clip player (TypeScript, no framework) | `runSession`, `pickGame`, `Stage`, `GAMES`, `createClipMascot` |
 | `challenge` | Native fallback challenge for devices without a working WebView | `ChallengeScreen`, `MathQuestion` |
 | `lockkit` | Everything that enforces the rule at runtime | `UsageMonitorService`, `ForegroundAppDetector`, `OverlayController`, `LockKit` |
 | `app` | Parent onboarding, PIN gate, dashboard and settings | `OnboardingFlow`, `ParentGate`, `HomeScreen`, `GuidedPermissions` |

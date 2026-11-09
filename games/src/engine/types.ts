@@ -2,7 +2,7 @@ import type { Wallet } from './economy';
 import type { Rng } from './rng';
 
 export type World = 'nuzo' | 'lotli' | 'embrix';
-export type Mood = 'idle' | 'thinking' | 'happy' | 'oops' | 'cheer' | 'talk';
+export type Mood = 'idle' | 'thinking' | 'happy' | 'oops' | 'cheer' | 'talk' | 'hello' | 'tap' | 'magic' | 'walk';
 
 /** What the Android host passes in. Every field is optional so the engine always has a safe default. */
 export interface HostConfig {

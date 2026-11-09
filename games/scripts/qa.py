@@ -36,7 +36,7 @@ async () => {
     if (isle && !document.querySelector('.island.picked')) { q('.island')[1].click(); await sleep(1100); continue; }
     const picker = document.querySelector('.picker:not(.leaving)');
     if (picker) {
-      q('.buddy-card')[1].click(); await sleep(300);
+      document.querySelector('.buddy-card:not(.soon)').click(); await sleep(300);
       document.querySelector('.picker-go').click(); await sleep(600);
       continue;
     }

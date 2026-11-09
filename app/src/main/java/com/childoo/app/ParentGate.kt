@@ -47,8 +47,7 @@ import com.childoo.core.ParentPin
 import com.childoo.core.SettingsRepository
 import com.childoo.designsystem.ChildooColors
 import com.childoo.designsystem.IconBadge
-import com.childoo.designsystem.Nuzo
-import com.childoo.designsystem.NuzoMood
+import com.childoo.designsystem.BuddyPortrait
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -348,7 +347,7 @@ fun KidCornerButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             .padding(start = 8.dp, end = 18.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Nuzo(Modifier.width(36.dp), mood = NuzoMood.Happy)
+        BuddyPortrait(Modifier.width(38.dp), breathe = false)
         Spacer(Modifier.width(8.dp))
         Text(stringResource(R.string.kid_corner_open), style = MaterialTheme.typography.labelLarge, color = ChildooColors.Navy)
     }

@@ -1,6 +1,7 @@
 import './ui/styles.css';
 import { createHost } from './bridge';
 import { loadClipManifest } from './characters/clips';
+import { activeBuddy } from './characters/mascots';
 import { normalizeWallet } from './engine/economy';
 import { Music } from './engine/music';
 import { createRng } from './engine/rng';
@@ -22,8 +23,9 @@ async function boot(): Promise<void> {
   const music = new Music(config.music !== false && config.sound !== false);
 
   if (config.mode === 'room') {
-    music.start(config.companion ?? 'nuzo');
-    const result = await runRoom(mount, config, host, sound);
+    const buddy = activeBuddy(config.companion);
+    music.start(buddy);
+    const result = await runRoom(mount, { ...config, companion: buddy }, host, sound);
     music.stop();
     host.stopSpeech();
     host.complete(result);
@@ -34,9 +36,9 @@ async function boot(): Promise<void> {
   const speak = (t: string) => config.voice !== false && host.speak(t);
 
   // 1. A buddy is picked once, ever; afterwards it is remembered by the host.
-  let companion = config.companion ?? null;
+  let companion: World | null = config.companion ? activeBuddy(config.companion) : null;
   if (!companion) {
-    stage.setWorld('nuzo', '');
+    stage.setWorld(activeBuddy(null), '');
     companion = await stage.pickBuddy(speak, () => sound.play('pop'));
     sound.play('correct');
   }

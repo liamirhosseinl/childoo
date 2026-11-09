@@ -1,0 +1,14 @@
+{
+  "buddy": "lotli",
+  "states": {
+    "idle":      { "video": "IDLE  Breathing.mp4", "from": 6,  "to": 61, "loop": true },
+    "talk":      { "video": "TALKING.mp4",         "from": 17, "to": 77, "loop": true },
+    "walk":      { "video": "WALK.mp4",            "from": 0,  "to": 35, "loop": true },
+    "hello":     { "video": "GREETING  Hello.mp4", "from": 27, "to": 90 },
+    "happy":     { "video": "ANIMATIONS.mp4",      "from": 27, "to": 90 },
+    "celebrate": { "video": "JUMP.mp4",            "from": 20, "to": 93 },
+    "tap":       { "video": "TAP REACTION.mp4",    "from": 33, "to": 75 },
+    "oops":      { "video": "SAD  Gentle Disappointment.mp4", "from": 22, "to": 62, "cutBelow": 808 },
+    "magic":     { "video": "MAGIC MOVE.mp4",      "from": 28, "to": 84 }
+  }
+}

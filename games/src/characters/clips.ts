@@ -1,23 +1,42 @@
 import type { Mood, World } from '../engine/types';
 
 /**
- * Optional animated character clips (transparent animated WebP), one per character and state,
- * in public/characters/<world>/<state>.webp and listed in public/characters/manifest.json.
- * When a character has clips, they replace the code-drawn stand-in automatically.
+ * Animated character clips (transparent animated WebP), one per character and state, in
+ * public/characters/<world>/<state>.webp and described in public/characters/manifest.json.
+ *
+ * Each state carries its length, whether it loops, and a per-frame head track
+ * ([x, y, size] as fractions of the clip canvas) so accessories can ride along with the animation.
  */
-type Manifest = Partial<Record<World, string[]>>;
+export type ClipState =
+  | 'idle'
+  | 'talk'
+  | 'hello'
+  | 'happy'
+  | 'celebrate'
+  | 'tap'
+  | 'oops'
+  | 'magic'
+  | 'walk';
+
+interface StateInfo {
+  ms: number;
+  loop: boolean;
+  fps: number;
+  /** One entry per frame: head centre x, head top y, head width; all as fractions of the canvas. */
+  track: [number, number, number][];
+}
+
+interface CharacterClips {
+  w: number;
+  h: number;
+  /** Share of the canvas height (from the bottom) the standing pose needs; the rest is jump room. */
+  box: number;
+  states: Partial<Record<ClipState, StateInfo>>;
+}
+
+type Manifest = Partial<Record<World, CharacterClips>>;
 
 let manifest: Manifest = {};
-
-/** State file names follow the animation spec. */
-const STATE_FOR_MOOD: Record<Mood, string> = {
-  idle: 'idle',
-  thinking: 'thinking',
-  talk: 'talk',
-  happy: 'happy',
-  oops: 'oops',
-  cheer: 'celebrate',
-};
 
 export async function loadClipManifest(): Promise<void> {
   try {
@@ -28,11 +47,33 @@ export async function loadClipManifest(): Promise<void> {
   }
 }
 
-/** URL of the clip for this mood, falling back to idle; null when the character has no clips. */
-export function clipFor(world: World, mood: Mood): string | null {
-  const states = manifest[world];
-  if (!states || !states.includes('idle')) return null;
-  const wanted = STATE_FOR_MOOD[mood];
-  const state = states.includes(wanted) ? wanted : 'idle';
+export function hasClips(world: World): boolean {
+  return Boolean(manifest[world]?.states.idle);
+}
+
+export function clipInfo(world: World, state: ClipState): StateInfo | null {
+  return manifest[world]?.states[state] ?? null;
+}
+
+export function clipCanvas(world: World): { w: number; h: number; box: number } {
+  const c = manifest[world];
+  return { w: c?.w ?? 400, h: c?.h ?? 500, box: c?.box ?? 1 };
+}
+
+export function clipUrl(world: World, state: ClipState): string {
   return `characters/${world}/${state}.webp`;
 }
+
+/** Which clip plays for a mood. Looping moods become the resting state; the rest play once. */
+export const CLIP_FOR_MOOD: Record<Mood, ClipState> = {
+  idle: 'idle',
+  thinking: 'idle',
+  talk: 'talk',
+  happy: 'happy',
+  oops: 'oops',
+  cheer: 'celebrate',
+  hello: 'hello',
+  tap: 'tap',
+  magic: 'magic',
+  walk: 'walk',
+};

@@ -1,9 +1,10 @@
 import { ITEMS, type Slot } from '../engine/economy';
-import { clipFor } from './clips';
+import { hasClips } from './clips';
+import { createClipMascot, dressClipMascot, isClipMascot, setClipMood } from './player';
 import type { Mood, World } from '../engine/types';
 
 /**
- * Code-drawn stand-ins for Nuzo, Lotli and Embrix until the Rive files arrive.
+ * Code-drawn stand-ins, used only for a character whose animated clips are not shipped yet.
  * Every character shares one face rig (eyes, happy eyes, five mouths) so moods are pure CSS.
  */
 
@@ -135,6 +136,15 @@ const EMBRIX = `
 
 const SVGS: Record<World, string> = { nuzo: NUZO, lotli: LOTLI, embrix: EMBRIX };
 
+/**
+ * Characters whose animation sets are finished. The others are shown as "coming soon"
+ * and can't be picked yet; anyone who had picked one plays with the first active buddy.
+ */
+export const ACTIVE_BUDDIES: World[] = ['lotli'];
+export const DEFAULT_BUDDY: World = 'lotli';
+export const isBuddyActive = (w: World): boolean => ACTIVE_BUDDIES.includes(w);
+export const activeBuddy = (w: World | null | undefined): World => (w && isBuddyActive(w) ? w : DEFAULT_BUDDY);
+
 export const CHARACTER_NAMES: Record<World, string> = { nuzo: 'Nuzo', lotli: 'Lotli', embrix: 'Embrix' };
 
 /** Where each accessory sits on each character, in the 200 × 200 drawing space. */
@@ -145,23 +155,30 @@ const SLOTS: Record<World, Record<Slot, { x: number; y: number; size: number; ro
 };
 
 export function createMascot(world: World, equipped: Partial<Record<Slot, string>> = {}): HTMLElement {
+  if (hasClips(world)) return createClipMascot(world, equipped);
   const el = document.createElement('div');
   el.className = `mascot mascot-${world}`;
   el.dataset.mood = 'idle';
   el.dataset.world = world;
-  const clip = clipFor(world, 'idle');
-  if (clip) {
-    el.classList.add('clip');
-    el.innerHTML = `<img class="clip-img" src="${clip}" alt="" draggable="false">`;
-    return el;
-  }
   el.innerHTML = SVGS[world];
   dressMascot(el, world, equipped);
   return el;
 }
 
+/** The character's official portrait (a still), used on picker and shelf cards. */
+export function portrait(world: World): HTMLElement {
+  const el = document.createElement('div');
+  el.className = `portrait portrait-${world}`;
+  el.innerHTML = `<img src="characters/${world}/hero.webp" alt="" draggable="false" decoding="async">`;
+  return el;
+}
+
 /** Puts the equipped accessories on (or takes them off). */
 export function dressMascot(el: HTMLElement, world: World, equipped: Partial<Record<Slot, string>>): void {
+  if (isClipMascot(el)) {
+    dressClipMascot(el, equipped);
+    return;
+  }
   (['hat', 'face', 'back'] as Slot[]).forEach((slot) => {
     const g = el.querySelector(`.slot-${slot}`);
     if (!g) return;
@@ -177,10 +194,8 @@ export function dressMascot(el: HTMLElement, world: World, equipped: Partial<Rec
 
 export function setMood(el: HTMLElement, mood: Mood): void {
   el.dataset.mood = mood;
-  if (el.classList.contains('clip')) {
-    const img = el.querySelector('.clip-img') as HTMLImageElement | null;
-    const src = clipFor(el.dataset.world as World, mood);
-    if (img && src && !img.src.endsWith(src)) img.src = src;
+  if (isClipMascot(el)) {
+    setClipMood(el, mood);
     return;
   }
   // Restart one-shot CSS animations when the same mood fires twice in a row.

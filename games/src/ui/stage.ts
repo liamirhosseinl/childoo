@@ -1,4 +1,4 @@
-import { CHARACTER_NAMES, createMascot, setMood } from '../characters/mascots';
+import { CHARACTER_NAMES, DEFAULT_BUDDY, createMascot, isBuddyActive, portrait, setMood } from '../characters/mascots';
 import type { Slot } from '../engine/economy';
 import type { Choice, ChooseOptions, Mood, World } from '../engine/types';
 
@@ -56,14 +56,15 @@ export class Stage {
     this.makeSky();
   }
 
-  setWorld(world: World, title: string): void {
+  /** Themes the screen for an island; the child's own buddy is the one who plays along. */
+  setWorld(world: World, title: string, buddy: World = DEFAULT_BUDDY, equipped: Partial<Record<Slot, string>> = {}): void {
     this.root.dataset.world = world;
     this.title.textContent = title;
     this.worldChip.textContent = WORLD_NAMES[world];
     const slot = this.hero.querySelector('.mascot-slot') as HTMLElement;
     slot.innerHTML = '';
-    this.mascotEl = createMascot(world);
-    this.mascotEl.setAttribute('aria-label', CHARACTER_NAMES[world]);
+    this.mascotEl = createMascot(buddy, equipped);
+    this.mascotEl.setAttribute('aria-label', CHARACTER_NAMES[buddy]);
     slot.appendChild(this.mascotEl);
     this.mascot('idle');
   }
@@ -168,8 +169,8 @@ export class Stage {
         ${level}
       </div>`;
     const m = createMascot(c.world, c.equipped);
-    setMood(m, 'cheer');
     (layer.querySelector('.celebrate-mascot') as HTMLElement).appendChild(m);
+    setMood(m, c.levelUp ? 'magic' : 'cheer');
     this.root.appendChild(layer);
     confetti(layer);
     const num = layer.querySelector('.coin-num') as HTMLElement;
@@ -184,13 +185,13 @@ export class Stage {
     return layer;
   }
 
-  /** First-run choice of buddy. Resolves with the chosen world. */
+  /** First-run choice of buddy. Resolves with the chosen world. Unfinished buddies show as coming soon. */
   pickBuddy(onSpeak: (text: string) => void, onTap: () => void): Promise<World> {
     return new Promise((resolve) => {
       const layer = document.createElement('div');
       layer.className = 'picker';
       layer.innerHTML = `
-        <h1>Pick your buddy!</h1>
+        <h1>Meet your buddy!</h1>
         <p>Your buddy plays with you every time.</p>
         <div class="picker-cards"></div>
         <button type="button" class="picker-go" disabled>Let's go!</button>`;
@@ -198,19 +199,29 @@ export class Stage {
       const go = layer.querySelector('.picker-go') as HTMLButtonElement;
       let chosen: World | null = null;
       const buttons: HTMLButtonElement[] = [];
-      (['nuzo', 'lotli', 'embrix'] as World[]).forEach((world) => {
+      (['lotli', 'nuzo', 'embrix'] as World[]).forEach((world) => {
+        const active = isBuddyActive(world);
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = `buddy-card buddy-${world}`;
-        b.innerHTML = `<div class="buddy-art"></div><b>${CHARACTER_NAMES[world]}</b><span>${BUDDY_LINES[world]}</span>`;
-        const m = createMascot(world);
-        (b.querySelector('.buddy-art') as HTMLElement).appendChild(m);
+        b.className = `buddy-card buddy-${world}${active ? '' : ' soon'}`;
+        b.innerHTML = `<div class="buddy-art"></div><b>${CHARACTER_NAMES[world]}</b><span>${
+          active ? BUDDY_LINES[world] : 'Coming soon'
+        }</span>${active ? '' : '<i class="lock" aria-hidden="true"></i>'}`;
+        const art = b.querySelector('.buddy-art') as HTMLElement;
+        const m = active ? createMascot(world) : portrait(world);
+        art.appendChild(m);
         b.addEventListener('click', () => {
           onTap();
+          if (!active) {
+            b.classList.remove('shake');
+            void b.offsetWidth;
+            b.classList.add('shake');
+            onSpeak(`${CHARACTER_NAMES[world]} is still getting ready. Coming soon!`);
+            return;
+          }
           chosen = world;
           buttons.forEach((x) => x.classList.toggle('chosen', x === b));
-          setMood(m, 'cheer');
-          window.setTimeout(() => setMood(m, 'idle'), 1400);
+          setMood(m, 'hello');
           onSpeak(`Hi! I'm ${CHARACTER_NAMES[world]}. ${BUDDY_HELLO[world]}`);
           go.disabled = false;
         });
@@ -226,7 +237,7 @@ export class Stage {
         }, 300);
       });
       this.root.appendChild(layer);
-      onSpeak('Pick your buddy!');
+      onSpeak('Meet your buddy!');
     });
   }
 

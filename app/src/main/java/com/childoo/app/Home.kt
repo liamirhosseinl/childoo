@@ -71,8 +71,9 @@ import com.childoo.core.SettingsRepository
 import com.childoo.designsystem.ChildooColors
 import com.childoo.designsystem.GhostButton
 import com.childoo.designsystem.IconBadge
-import com.childoo.designsystem.Nuzo
-import com.childoo.designsystem.NuzoMood
+import com.childoo.designsystem.Buddies
+import com.childoo.designsystem.Buddy
+import com.childoo.designsystem.BuddyPortrait
 import com.childoo.lockkit.LockKit
 import kotlinx.coroutines.launch
 
@@ -123,7 +124,7 @@ private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit, onKidCor
     ) {
         // Header
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Nuzo(Modifier.width(40.dp), mood = NuzoMood.Happy)
+            BuddyPortrait(Modifier.width(44.dp), breathe = false)
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
@@ -267,7 +268,7 @@ private fun StatusHero(
                     )
                 }
             } else {
-                Nuzo(Modifier.width(54.dp), mood = NuzoMood.Thinking)
+                BuddyPortrait(Modifier.width(58.dp))
             }
         }
         Spacer(Modifier.width(18.dp))
@@ -532,12 +533,8 @@ private fun BuddyCard(rewards: Rewards, onOpen: () -> Unit) {
     val to = com.childoo.core.Wallet.xpForLevel(level + 1)
     val progress = ((wallet.xp - from).toFloat() / (to - from).coerceAtLeast(1)).coerceIn(0f, 1f)
     val streak = rewards.streak.current(today)
-    val name = when (rewards.companion) {
-        "lotli" -> "Lotli"
-        "embrix" -> "Embrix"
-        "nuzo" -> "Nuzo"
-        else -> null
-    }
+    val buddy = Buddies.active(rewards.companion)
+    val name = if (rewards.companion == null) null else Buddies.name(buddy)
 
     Column(
         Modifier
@@ -548,7 +545,7 @@ private fun BuddyCard(rewards: Rewards, onOpen: () -> Unit) {
             .padding(18.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Nuzo(Modifier.width(52.dp), mood = NuzoMood.Happy)
+            Buddy(Modifier.width(64.dp), buddy = buddy)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(

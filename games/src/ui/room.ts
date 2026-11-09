@@ -1,5 +1,5 @@
 import type { Host } from '../bridge';
-import { CHARACTER_NAMES, createMascot, dressMascot, setMood } from '../characters/mascots';
+import { CHARACTER_NAMES, activeBuddy, createMascot, dressMascot, isBuddyActive, portrait, setMood } from '../characters/mascots';
 import { ITEMS, WORLDS, buy, levelFromXp, levelProgress, normalizeWallet, toggleEquip, type Item, type Slot, type Wallet } from '../engine/economy';
 import type { Sound } from '../engine/sound';
 import type { HostConfig, SessionResult, World } from '../engine/types';
@@ -20,7 +20,7 @@ const TABS: { id: Tab; label: string }[] = [
  */
 export function runRoom(mount: HTMLElement, config: HostConfig, host: Host, sound: Sound): Promise<SessionResult> {
   let wallet: Wallet = normalizeWallet(config.wallet);
-  let companion: World = config.companion ?? 'nuzo';
+  let companion: World = activeBuddy(config.companion);
   let tab: Tab = 'buddies';
   const started = performance.now();
   const say = (t: string) => config.voice !== false && host.speak(t);
@@ -66,10 +66,7 @@ export function runRoom(mount: HTMLElement, config: HostConfig, host: Host, soun
     (root.querySelector('.xp-label') as HTMLElement).textContent = 'Play challenges to level up!';
   };
 
-  const cheer = () => {
-    setMood(mascot, 'cheer');
-    window.setTimeout(() => setMood(mascot, 'idle'), 1600);
-  };
+  const cheer = () => setMood(mascot, 'happy');
 
   const renderTabs = () => {
     tabs.innerHTML = '';
@@ -91,21 +88,35 @@ export function runRoom(mount: HTMLElement, config: HostConfig, host: Host, soun
   const renderShelf = () => {
     shelf.innerHTML = '';
     if (tab === 'buddies') {
-      WORLDS.forEach((w) => {
+      [...WORLDS].sort((a, b) => Number(isBuddyActive(b)) - Number(isBuddyActive(a))).forEach((w) => {
+        const active = isBuddyActive(w);
         const card = document.createElement('button');
         card.type = 'button';
-        card.className = `shelf-card buddy${w === companion ? ' wearing' : ''}`;
-        card.innerHTML = `<div class="shelf-art"></div><b>${CHARACTER_NAMES[w]}</b><span>${w === companion ? 'Your buddy' : 'Choose'}</span>`;
-        (card.querySelector('.shelf-art') as HTMLElement).appendChild(createMascot(w));
+        card.className = `shelf-card buddy${w === companion ? ' wearing' : ''}${active ? '' : ' soon'}`;
+        card.innerHTML = `<div class="shelf-art"></div><b>${CHARACTER_NAMES[w]}</b><span>${
+          w === companion ? 'Your buddy' : active ? 'Choose' : 'Coming soon'
+        }</span>${active ? '' : '<i class="lock" aria-hidden="true"></i>'}`;
+        (card.querySelector('.shelf-art') as HTMLElement).appendChild(portrait(w));
         card.addEventListener('click', () => {
-          if (w === companion) return;
+          if (!active) {
+            sound.play('tap');
+            card.classList.remove('shake');
+            void card.offsetWidth;
+            card.classList.add('shake');
+            toast(`${CHARACTER_NAMES[w]} is coming soon!`);
+            return;
+          }
+          if (w === companion) {
+            setMood(mascot, 'tap');
+            return;
+          }
           sound.play('pop');
           companion = w;
           root.dataset.world = w;
           slot.innerHTML = '';
           mascot = createMascot(companion, wallet.equipped);
           slot.appendChild(mascot);
-          cheer();
+          setMood(mascot, 'hello');
           say(`Hi! I'm ${CHARACTER_NAMES[w]}!`);
           refreshStats();
           renderShelf();
@@ -194,7 +205,7 @@ export function runRoom(mount: HTMLElement, config: HostConfig, host: Host, soun
   renderTabs();
   renderShelf();
   window.setTimeout(() => {
-    cheer();
+    setMood(mascot, 'hello');
     say(`Hi! It's me, ${CHARACTER_NAMES[companion]}. You have ${wallet.coins} coins.`);
   }, 400);
 

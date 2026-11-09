@@ -16,3 +16,6 @@ keystore.properties
 
 # Web games
 games/node_modules/
+
+# Raw character animation renders (source videos for games/scripts/character-clips.py)
+/Animation/
