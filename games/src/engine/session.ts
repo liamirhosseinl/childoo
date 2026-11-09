@@ -31,6 +31,7 @@ export async function runSession(game: Game, config: HostConfig, deps: SessionDe
     if (config.voice !== false) host.speak(text);
   };
   stage.onReplayRequest = () => lastSpoken && host.speak(lastSpoken);
+  stage.setVoice(config.voice !== false);
 
   const wallet = normalizeWallet(config.wallet);
   let companion: World | null = config.companion ?? null;
@@ -172,7 +173,9 @@ export async function runSession(game: Game, config: HostConfig, deps: SessionDe
   const name = config.childName ? `, ${config.childName}` : '';
   const title = `Amazing work${name}!`;
   const levelUp = levelAfter > levelBefore;
+  const gameLevelUp = result.newLevel > level ? { title: game.title, level: result.newLevel } : undefined;
   stage.celebrate({
+    gameLevelUp,
     title,
     sub: 'Your play time is unlocked. Have fun!',
     world: companion,

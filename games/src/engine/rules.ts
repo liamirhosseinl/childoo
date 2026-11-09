@@ -37,6 +37,8 @@ export function nextLevel(level: number, maxLevel: number, records: RoundRecord[
   const firstTry = records.filter((r) => r.wrongAt.length === 0).length / records.length;
   const avgMs = records.reduce((n, r) => n + r.solvedAt, 0) / records.length;
   if (firstTry === 1 && avgMs < 9000) return clamp(level + 1, 1, maxLevel);
+  // Most right first time and at a good pace: still time to move on.
+  if (firstTry >= 2 / 3 && avgMs < 7000) return clamp(level + 1, 1, maxLevel);
   if (firstTry < 0.5) return clamp(level - 1, 1, maxLevel);
   return level;
 }

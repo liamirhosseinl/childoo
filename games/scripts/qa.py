@@ -21,6 +21,7 @@ GAMES = {
     'fair-share': [2], 'pattern-path': [1, 4], 'bubble-letters': [2], 'word-builder': [1, 3],
     'rhyme-lagoon': [1], 'odd-one-out': [1, 3], 'word-fishing': [2], 'dragon-breath': [1],
     'power-moves': [1], 'dragon-memory': [2],
+    'space-hockey': [1, 4], 'number-snake': [1, 3], 'word-snake': [2], 'penalty-kick': [2, 4],
 }
 
 AUTOPLAY = r"""
@@ -31,6 +32,8 @@ async () => {
   while (Date.now() - start < 120000) {
     if (window.__childooResult) return window.__childooResult;
     const q = (s) => Array.from(document.querySelectorAll(s));
+    const isle = document.querySelector('.islands:not(.leaving) .island:not(.picked)');
+    if (isle && !document.querySelector('.island.picked')) { q('.island')[1].click(); await sleep(1100); continue; }
     const picker = document.querySelector('.picker:not(.leaving)');
     if (picker) {
       q('.buddy-card')[1].click(); await sleep(300);
@@ -98,6 +101,7 @@ def main() -> int:
                 page.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
                 page.on('pageerror', lambda e: errors.append(str(e)))
                 buddy = '' if game == 'star-counter' and level == 1 else '&buddy=embrix'
+                page.add_init_script('window.__qaSolve = true')
                 page.goto(f'http://127.0.0.1:{port}/index.html?game={game}&level={level}&seed=7&voice=0&sound=0&coins=70&xp=70&streak=3{buddy}')
                 page.wait_for_timeout(600)
                 page.screenshot(path=str(out / f'{game}-L{level}-1-intro.png'))
@@ -113,6 +117,21 @@ def main() -> int:
                     failures.append(f'{game} L{level}: console errors: {errors[:3]}')
                 results[f'{game}-L{level}'] = {'result': result, 'seconds': round(time.time() - t0, 1)}
                 page.close()
+        if not only or 'islands' in only:
+            page = browser.new_page(viewport={'width': 393, 'height': 852}, device_scale_factor=2)
+            errors = []
+            page.on('pageerror', lambda e: errors.append(str(e)))
+            page.goto(f'http://127.0.0.1:{port}/index.html?voice=0&sound=0&coins=140&xp=140&streak=5&buddy=lotli&age=7')
+            page.wait_for_timeout(1200)
+            page.screenshot(path=str(out / 'islands-1.png'))
+            res = page.evaluate(AUTOPLAY)
+            page.screenshot(path=str(out / 'islands-2-end.png'))
+            results['islands'] = res
+            if not res or res.get('chosenWorld') != 'lotli':
+                failures.append(f'islands: unexpected {res}')
+            if errors:
+                failures.append(f'islands: errors {errors[:3]}')
+            page.close()
         if not only or 'room' in only:
             page = browser.new_page(viewport={'width': 393, 'height': 852}, device_scale_factor=2)
             errors = []

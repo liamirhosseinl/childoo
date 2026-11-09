@@ -77,3 +77,27 @@ data class SoundPrefs(
     val effects: Boolean = true,
     val music: Boolean = true,
 )
+
+/** Island picks per world ("nuzo", "lotli", "embrix"). */
+data class Interests(val counts: Map<String, Int> = emptyMap()) {
+    val total: Int get() = counts.values.sum()
+
+    fun share(world: String): Float = if (total == 0) 0f else (counts[world] ?: 0).toFloat() / total
+
+    fun plusOne(world: String): Interests = Interests(counts + (world to (counts[world] ?: 0) + 1))
+
+    companion object {
+        private val ID = Regex("^[a-z]{1,16}$")
+
+        fun encode(i: Interests): String =
+            i.counts.filter { ID.matches(it.key) && it.value > 0 }.entries.sortedBy { it.key }.joinToString(",") { "${it.key}:${it.value}" }
+
+        fun decode(raw: String): Interests = Interests(
+            raw.split(',').mapNotNull { part ->
+                val k = part.substringBefore(':', "")
+                val v = part.substringAfter(':', "").toIntOrNull()
+                if (ID.matches(k) && v != null && v > 0) k to v else null
+            }.toMap(),
+        )
+    }
+}

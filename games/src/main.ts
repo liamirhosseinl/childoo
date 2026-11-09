@@ -1,12 +1,15 @@
 import './ui/styles.css';
 import { createHost } from './bridge';
 import { loadClipManifest } from './characters/clips';
+import { normalizeWallet } from './engine/economy';
+import { Music } from './engine/music';
 import { createRng } from './engine/rng';
-import { pickGame } from './engine/rules';
+import { defaultLevel, pickGame } from './engine/rules';
 import { runSession } from './engine/session';
 import { Sound } from './engine/sound';
-import { Music } from './engine/music';
+import type { Game, HostConfig, World } from './engine/types';
 import { GAMES } from './games';
+import { pickIsland, type IslandInfo } from './ui/islands';
 import { runRoom } from './ui/room';
 import { Stage } from './ui/stage';
 
@@ -27,14 +30,58 @@ async function boot(): Promise<void> {
     return;
   }
 
-  const rng = createRng(config.seed ?? Date.now());
-  const game = pickGame(GAMES, config, rng);
   const stage = new Stage(mount);
+  const speak = (t: string) => config.voice !== false && host.speak(t);
+
+  // 1. A buddy is picked once, ever; afterwards it is remembered by the host.
+  let companion = config.companion ?? null;
+  if (!companion) {
+    stage.setWorld('nuzo', '');
+    companion = await stage.pickBuddy(speak, () => sound.play('pop'));
+    sound.play('correct');
+  }
+
+  // 2. The child picks an island (unless QA forced a game).
+  const age = config.age ?? 6;
+  let chosenWorld: World | null = null;
+  if (!config.forceGame) {
+    music.start(companion);
+    chosenWorld = await pickIsland(
+      stage.root,
+      islandInfo(GAMES, config),
+      companion,
+      normalizeWallet(config.wallet),
+      config.streakDays ?? 0,
+      () => sound.play('pop'),
+    );
+    music.stop();
+  }
+
+  // 3. A game from that island, fitted to age and history.
+  const rng = createRng(config.seed ?? Date.now());
+  const pool = chosenWorld ? GAMES.filter((g) => g.world === chosenWorld && age >= g.minAge && age <= g.maxAge) : GAMES;
+  const game = pickGame(pool.length > 0 ? pool : GAMES, config, rng);
   music.start(game.world);
-  const result = await runSession(game, config, { stage, sound, host });
+  const sessionConfig: HostConfig = { ...config, companion };
+  const result = await runSession(game, sessionConfig, { stage, sound, host });
   music.stop();
   host.stopSpeech();
-  host.complete(result);
+  host.complete({ ...result, companion, chosenWorld });
+
+  function islandInfo(games: Game[], cfg: HostConfig): IslandInfo[] {
+    return (['nuzo', 'lotli', 'embrix'] as World[]).map((world) => {
+      const mine = games.filter((g) => g.world === world && age >= g.minAge && age <= g.maxAge);
+      const levels = mine.map((g) => cfg.levels?.[g.id] ?? defaultLevel(age, g.maxLevel));
+      const max = mine.reduce((n, g) => n + g.maxLevel, 0);
+      const sum = levels.reduce((n, l) => n + l, 0);
+      return {
+        world,
+        games: mine.length,
+        level: Math.max(1, Math.round(sum / Math.max(1, mine.length))),
+        progress: max === 0 ? 0 : sum / max,
+      };
+    });
+  }
 }
 
 void boot();

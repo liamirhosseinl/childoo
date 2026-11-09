@@ -135,7 +135,15 @@
     <string name="buddy_coins">%1$d coins</string>
     <string name="buddy_streak">%1$d-day streak</string>
     <string name="home_sound_title">Sound</string>
-    <string name="sound_voice">Read questions aloud</string>
     <string name="sound_effects">Sound effects</string>
     <string name="sound_music">Music</string>
+
+    <!-- Interests -->
+    <string name="interests_title">What your child picks</string>
+    <string name="interests_empty">After a few challenges you\'ll see which island your child chooses most: numbers, words, or moving and calm.</string>
+    <string name="interests_count">%1$d%% · %2$d times</string>
+    <string name="interests_hint">Based on %1$d choices. A strong lean over weeks can hint at a talent worth nurturing.</string>
+    <string name="island_numbers">Number Planet (math and logic)</string>
+    <string name="island_words">Word Lagoon (letters and reading)</string>
+    <string name="island_courage">Courage Mountain (movement, calm, memory)</string>
 </resources>

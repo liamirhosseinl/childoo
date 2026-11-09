@@ -63,6 +63,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.childoo.core.ChildProfile
+import com.childoo.core.Interests
 import com.childoo.core.LockSettings
 import com.childoo.core.Rewards
 import com.childoo.core.SoundPrefs
@@ -105,6 +106,7 @@ private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit, onKidCor
     val child by repo.child.collectAsStateWithLifecycle(initialValue = ChildProfile())
     val rewards by repo.rewards.collectAsStateWithLifecycle(initialValue = Rewards())
     val sound by repo.soundPrefs.collectAsStateWithLifecycle(initialValue = SoundPrefs())
+    val interests by repo.interests.collectAsStateWithLifecycle(initialValue = Interests())
     val apps by rememberInstalledApps()
     val selectedApps = remember(apps, settings.targetPackages) {
         apps.orEmpty().filter { it.packageName in settings.targetPackages }
@@ -176,6 +178,10 @@ private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit, onKidCor
 
         BuddyCard(rewards = rewards, onOpen = onKidCorner)
 
+        SectionCard(title = stringResource(R.string.interests_title)) {
+            InterestsChart(interests)
+        }
+
         // Protected apps
         SectionCard(
             title = stringResource(R.string.home_apps_title),
@@ -202,7 +208,6 @@ private fun Dashboard(repo: SettingsRepository, onEditApps: () -> Unit, onKidCor
         }
 
         SectionCard(title = stringResource(R.string.home_sound_title)) {
-            SoundRow(stringResource(R.string.sound_voice), sound.voice) { on -> scope.launch { repo.setSoundPrefs(sound.copy(voice = on)) } }
             SoundRow(stringResource(R.string.sound_effects), sound.effects) { on -> scope.launch { repo.setSoundPrefs(sound.copy(effects = on)) } }
             SoundRow(stringResource(R.string.sound_music), sound.music) { on -> scope.launch { repo.setSoundPrefs(sound.copy(music = on)) } }
         }
@@ -590,4 +595,59 @@ private fun Chip(text: String) {
             .background(Color.Black.copy(alpha = 0.2f))
             .padding(horizontal = 12.dp, vertical = 6.dp),
     )
+}
+
+/** Which island the child picks when given the choice: an early read on what they enjoy. */
+@Composable
+private fun InterestsChart(interests: Interests) {
+    if (interests.total == 0) {
+        Text(
+            stringResource(R.string.interests_empty),
+            style = MaterialTheme.typography.bodyMedium,
+            color = ChildooColors.InkSoft,
+        )
+        return
+    }
+    val rows = listOf(
+        Triple("nuzo", R.string.island_numbers, ChildooColors.Sky),
+        Triple("lotli", R.string.island_words, ChildooColors.Mint),
+        Triple("embrix", R.string.island_courage, ChildooColors.Coral),
+    ).sortedByDescending { interests.counts[it.first] ?: 0 }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        rows.forEach { (world, name, color) ->
+            val count = interests.counts[world] ?: 0
+            val share = interests.share(world)
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(name), style = MaterialTheme.typography.titleSmall, color = ChildooColors.Ink, modifier = Modifier.weight(1f))
+                    Text(
+                        stringResource(R.string.interests_count, (share * 100).toInt(), count),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ChildooColors.InkSoft,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        .clip(CircleShape)
+                        .background(ChildooColors.Sand),
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth(share.coerceIn(0.02f, 1f))
+                            .height(10.dp)
+                            .clip(CircleShape)
+                            .background(color),
+                    )
+                }
+            }
+        }
+        Text(
+            stringResource(R.string.interests_hint, interests.total),
+            style = MaterialTheme.typography.bodySmall,
+            color = ChildooColors.InkSoft,
+        )
+    }
 }

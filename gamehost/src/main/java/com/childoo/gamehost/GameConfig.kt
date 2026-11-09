@@ -62,6 +62,8 @@ data class GameResult(
     val coinsEarned: Int,
     val companion: String?,
     val wallet: Wallet?,
+    /** The island the child picked for this challenge, if they were offered the choice. */
+    val chosenWorld: String?,
 ) {
     val isRoom: Boolean get() = mode == "room"
 
@@ -84,6 +86,7 @@ data class GameResult(
                 coinsEarned = o.optInt("coinsEarned"),
                 companion = o.optString("companion").takeIf { it.isNotBlank() && it != "null" },
                 wallet = o.optJSONObject("wallet")?.let(::parseWallet),
+                chosenWorld = o.optString("chosenWorld").takeIf { it.isNotBlank() && it != "null" },
             )
         } catch (_: Exception) {
             null

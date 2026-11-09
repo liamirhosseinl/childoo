@@ -14,11 +14,7 @@ import android.os.PowerManager
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import com.childoo.core.ChildProfile
-import com.childoo.core.GameProgress
 import com.childoo.core.LockSettings
-import com.childoo.core.Rewards
-import com.childoo.core.SoundPrefs
 import com.childoo.core.PlayTimeAccumulator
 import com.childoo.core.SettingsRepository
 import com.childoo.gamehost.GameConfig
@@ -48,16 +44,15 @@ class UsageMonitorService : Service() {
     private lateinit var power: PowerManager
 
     private var settings = LockSettings()
-    private var child = ChildProfile()
-    private var progress = GameProgress()
-    private var rewards = Rewards()
-    private var soundPrefs = SoundPrefs()
     private var accumulator = PlayTimeAccumulator()
     private var loop: Job? = null
 
     /** True once the interval is used up; stays true until the child solves the challenge. */
     private var challengeDue = false
     private var testMode = false
+
+    /** True while the latest settings are being read for a challenge that is about to open. */
+    private var opening = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -91,15 +86,7 @@ class UsageMonitorService : Service() {
     private suspend fun runLoop() {
         accumulator = PlayTimeAccumulator(initialPlayedMs = repo.playedSinceChallengeMs.first())
         scope.launch { repo.settings.collect { settings = it } }
-        scope.launch { repo.child.collect { child = it } }
-        scope.launch { repo.gameProgress.collect { progress = it } }
-        scope.launch { repo.rewards.collect { rewards = it } }
-        scope.launch { repo.soundPrefs.collect { soundPrefs = it } }
         settings = repo.settings.first()
-        child = repo.child.first()
-        progress = repo.gameProgress.first()
-        rewards = repo.rewards.first()
-        soundPrefs = repo.soundPrefs.first()
 
         var lastTick = SystemClock.elapsedRealtime()
         var lastSave = lastTick
@@ -138,33 +125,55 @@ class UsageMonitorService : Service() {
         }
     }
 
+    /**
+     * Reads the child's latest profile, buddy, coins and sound settings every time, so a preview
+     * started before the monitor loop is running still knows the chosen buddy and settings.
+     */
     private fun showChallenge() {
-        val today = LocalDate.now().toEpochDay()
-        val config = GameConfig(
-            age = child.age,
-            childName = child.name,
-            companion = rewards.companion,
-            levels = progress.levels,
-            recent = progress.recent,
-            wallet = rewards.wallet,
-            streakDays = rewards.streak.ifPlayedOn(today),
-            voice = soundPrefs.voice,
-            sound = soundPrefs.effects,
-            music = soundPrefs.music,
-        )
-        overlay.show(config, onDone = ::onChallengeSolved)
+        if (overlay.isShowing || opening) return
+        opening = true
+        scope.launch {
+            try {
+                val child = repo.child.first()
+                val progress = repo.gameProgress.first()
+                val rewards = repo.rewards.first()
+                val sound = repo.soundPrefs.first()
+                val today = LocalDate.now().toEpochDay()
+                val config = GameConfig(
+                    age = child.age,
+                    childName = child.name,
+                    companion = rewards.companion,
+                    levels = progress.levels,
+                    recent = progress.recent,
+                    wallet = rewards.wallet,
+                    streakDays = rewards.streak.ifPlayedOn(today),
+                    // Read-aloud is off until recorded voices exist for each language.
+                    voice = false,
+                    sound = sound.effects,
+                    music = sound.music,
+                )
+                overlay.show(config, onDone = ::onChallengeSolved)
+            } finally {
+                opening = false
+            }
+        }
     }
 
     private fun onChallengeSolved(result: GameResult?) {
         overlay.hide()
         val wasTest = testMode
         testMode = false
-        if (wasTest) return
+        if (wasTest) {
+            // A preview earns nothing, but a buddy picked during it is kept.
+            val buddy = result?.companion
+            if (buddy != null) scope.launch { repo.setCompanion(buddy) }
+            return
+        }
         challengeDue = false
         accumulator.reset()
         scope.launch {
             if (result != null) {
-                repo.recordGame(result.gameId, result.newLevel, result.wallet, result.companion)
+                repo.recordGame(result.gameId, result.newLevel, result.wallet, result.companion, result.chosenWorld)
             } else {
                 repo.recordChallengeSolved()
             }

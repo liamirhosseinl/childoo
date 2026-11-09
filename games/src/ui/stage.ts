@@ -68,6 +68,11 @@ export class Stage {
     this.mascot('idle');
   }
 
+  /** Hides the "hear it again" button when read-aloud is off. */
+  setVoice(enabled: boolean): void {
+    (this.root.querySelector('.replay-btn') as HTMLElement).hidden = !enabled;
+  }
+
   setStars(total: number, done: number): void {
     const current = this.stars.children.length;
     if (current !== total) {
@@ -158,6 +163,7 @@ export class Stage {
         <div class="rewards">
           <div class="coin-total"><span class="coin" aria-hidden="true"></span><span class="coin-num">+0</span></div>
           ${streak}
+          ${c.gameLevelUp ? `<div class="reward-chip game-up">⬆ ${escapeHtml(c.gameLevelUp.title)} is now level ${c.gameLevelUp.level}</div>` : ''}
         </div>
         ${level}
       </div>`;
@@ -250,6 +256,8 @@ export interface Celebration {
   streakBonus: number;
   levelUp: boolean;
   level: number;
+  /** The game itself got harder: shown so the child sees their progress. */
+  gameLevelUp?: { title: string; level: number };
   onTick?: () => void;
 }
 

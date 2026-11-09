@@ -39,7 +39,7 @@ fun KidCorner(repo: SettingsRepository, onClose: () -> Unit) {
             companion = rewards.companion,
             wallet = rewards.wallet,
             streakDays = rewards.streak.current(LocalDate.now().toEpochDay()),
-            voice = sound.voice,
+            voice = false,
             sound = sound.effects,
             music = sound.music,
             mode = GameConfig.Mode.Room,

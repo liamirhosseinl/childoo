@@ -113,4 +113,6 @@ export interface SessionResult {
   companion: World | null;
   /** Full wallet after this session; the host stores it as is. */
   wallet: Wallet;
+  /** The island the child chose for this challenge (null when it was not offered). */
+  chosenWorld?: World | null;
 }

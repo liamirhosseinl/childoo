@@ -40,4 +40,14 @@ class RewardsTest {
         assertEquals(0, s.current(day + 3))
         assertEquals(1, s.ifPlayedOn(day + 5))
     }
+
+    @Test
+    fun interestsCountAndShare() {
+        var i = Interests()
+        i = i.plusOne("nuzo").plusOne("nuzo").plusOne("lotli")
+        assertEquals(3, i.total)
+        assertEquals(2f / 3f, i.share("nuzo"), 0.001f)
+        assertEquals(i, Interests.decode(Interests.encode(i)))
+        assertEquals(Interests(), Interests.decode("bad:-1,:3,x:y"))
+    }
 }

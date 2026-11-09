@@ -54,6 +54,7 @@ class SettingsRepository(context: Context) {
         val VOICE_ON = booleanPreferencesKey("voice_on")
         val EFFECTS_ON = booleanPreferencesKey("effects_on")
         val MUSIC_ON = booleanPreferencesKey("music_on")
+        val INTERESTS = stringPreferencesKey("interests")
     }
 
     val settings: Flow<LockSettings> = store.data.map { p ->
@@ -97,7 +98,13 @@ class SettingsRepository(context: Context) {
     }
 
     /** One finished game: store its new level, the child's coins and buddy, extend the streak, reset the timer. */
-    suspend fun recordGame(gameId: String, newLevel: Int, wallet: Wallet? = null, companion: String? = null) {
+    suspend fun recordGame(
+        gameId: String,
+        newLevel: Int,
+        wallet: Wallet? = null,
+        companion: String? = null,
+        chosenWorld: String? = null,
+    ) {
         val today = LocalDate.now().toEpochDay()
         store.edit { p ->
             val levels = GameProgress.decodeLevels(p[Keys.GAME_LEVELS].orEmpty()) + (gameId to newLevel)
@@ -108,11 +115,22 @@ class SettingsRepository(context: Context) {
             p[Keys.CHALLENGES_SOLVED] = (p[Keys.CHALLENGES_SOLVED] ?: 0) + 1
             if (wallet != null) p[Keys.WALLET] = Wallet.encode(wallet)
             if (companion != null && companion in COMPANIONS) p[Keys.COMPANION] = companion
+            if (chosenWorld != null && chosenWorld in COMPANIONS) {
+                p[Keys.INTERESTS] = Interests.encode(Interests.decode(p[Keys.INTERESTS].orEmpty()).plusOne(chosenWorld))
+            }
             val streak = Streak(p[Keys.STREAK_DAYS] ?: 0, p[Keys.STREAK_LAST_DAY] ?: Long.MIN_VALUE).playedOn(today)
             p[Keys.STREAK_DAYS] = streak.days
             p[Keys.STREAK_LAST_DAY] = streak.lastDay
         }
     }
+
+    suspend fun setCompanion(companion: String) {
+        if (companion !in COMPANIONS) return
+        store.edit { it[Keys.COMPANION] = companion }
+    }
+
+    /** How often the child picked each island when given the choice: a first signal of their interests. */
+    val interests: Flow<Interests> = store.data.map { Interests.decode(it[Keys.INTERESTS].orEmpty()) }
 
     /** Leaving the Kid's Corner: keep purchases, outfit and buddy choice. */
     suspend fun recordRoom(wallet: Wallet, companion: String?) {
